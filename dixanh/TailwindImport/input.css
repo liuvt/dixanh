@@ -1,0 +1,29 @@
+﻿@import "tailwindcss";
+
+@layer base {
+    /* H1 fix lỗi tab */
+    h1
+
+{
+    cursor: default; /* chuột không còn dạng link */
+}
+
+h1:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+/* Safari cần -webkit-overflow-scrolling để không bị “ngắt trượt”. */
+[data-tvt-carousel-track] {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Blazor Server reconnect overlay */
+#components-reconnect-modal {
+    display: none !important;
+}
+
+/* Blazor error UI (mặc định trong template) */
+#blazor-error-ui {
+    display: none !important;
+}
+}

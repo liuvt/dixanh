@@ -1,0 +1,21 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/package-lock.json
+/package.json
+/node_modules
+/dixanh/.vs
+/dixanh/bin
+/dixanh/obj
+/dixanh/ggsheetaccount.json
+/dixanh/ltvggsheetaccount.json
+/dixanh/node_modules
+/dixanh/package-lock.json
+/dixanh/package.json
+/dixanh/tailwind.extension.json
+/dixanh/bodylogin.bin
+
+/dixanh.Libraries/bin
+/dixanh.Libraries/obj

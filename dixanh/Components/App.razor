@@ -1,0 +1,45 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <ImportMap @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+
+    <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+    <link rel="manifest" href="site.webmanifest" />
+
+    <!-- Load Tailwind -->
+    <link rel="stylesheet" href="css/tailwindcss.css" />
+    <link rel="stylesheet" href="css/mystyles.css" />
+
+    <!--Animation: hiệu ứng chữ và ảnh-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <!--Swiper CND: trượt brand logo-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <!--Icon: fontawesome.com-->
+    <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+    <!--Add Cdnjs: https://cdnjs.com/libraries/font-awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css"
+          integrity="sha512-MV7K8+y+gLIBoVD59lQIYicR65iaqukzvf/nwasF0nqhPay5w/9lJmVM2hMDcnK1OnMGCdVK+iQrJ7lzPJQd1w=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <HeadOutlet @rendermode="new InteractiveServerRenderMode(prerender: false)"  />
+</head>
+
+<body>
+    <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+    <!--Nút đăng nhập-->
+    <script src="https://accounts.google.com/gsi/client" async></script>
+    <!--SwiperJS-->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <!--Customer Js-->
+    <script src="js/script.js"></script>
+
+    <script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>

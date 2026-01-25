@@ -1,0 +1,57 @@
+﻿<section class="py-8">
+    <div class="mx-auto w-full max-w-5xl px-4">
+        <h2 class="text-center text-2xl md:text-3xl font-semibold text-emerald-700">
+            ĐỐI TÁC CHÚNG TÔI
+        </h2>
+
+        <div class="mt-6 space-y-6">
+            <!-- Row 1 -->
+            <div class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-4">
+                <div class="swiper swiperJsBrand" data-swiper="brand-row-1">
+                    <div class="swiper-wrapper !transition-[transform] [transition-timing-function:linear]">
+                        @foreach (var item in models)
+                        {
+                            <div class="swiper-slide flex items-center justify-center">
+                                <img src="@item.lineOne"
+                                     class="h-12 md:h-14 w-auto object-contain"
+                                     loading="lazy"
+                                     alt="Brand logo" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-4">
+                <div class="swiper swiperJsBrand" data-swiper="brand-row-2">
+                    <div class="swiper-wrapper !transition-[transform] [transition-timing-function:linear]">
+                        @foreach (var item in models)
+                        {
+                            <div class="swiper-slide flex items-center justify-center">
+                                <img src="@item.lineTwo"
+                                     class="h-12 md:h-14 w-auto object-contain"
+                                     loading="lazy"
+                                     alt="Brand logo" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    [Inject] private IJSRuntime js { get; set; } = default!;
+
+    protected List<BrandLogo> models = new DataBrandLogo().brandLogos;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await js.InvokeVoidAsync("callSwiperJSLogoBrand", null);
+        }
+    }
+}

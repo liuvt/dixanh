@@ -1,0 +1,273 @@
+﻿@page "/register"
+@inherits AppRegisterBase
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Đăng ký tài khoản - Đi Xanh</PageTitle>
+
+<div class="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-10">
+    <div class="mx-auto w-full max-w-5xl">
+        <AuthorizeView Context="authContext">
+            <Authorized>
+                <div class="max-w-xl">
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+                        <h1 class="text-lg font-semibold text-amber-900">Bạn đã đăng nhập</h1>
+                        <p class="mt-2 text-sm text-amber-800">
+                            Tài khoản của bạn đang ở trạng thái đăng nhập.
+                        </p>
+                        <a href="/"
+                           class="mt-4 inline-flex items-center justify-center rounded-xl bg-amber-600 px-4 py-2.5 text-white font-semibold hover:bg-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-200">
+                            Quay lại trang chủ
+                        </a>
+                    </div>
+                </div>
+            </Authorized>
+
+            <NotAuthorized>
+                <div class="mb-6 text-center">
+                    <h1 class="text-2xl font-semibold text-slate-900">Đăng ký tài khoản</h1>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Vui lòng điền đầy đủ thông tin để tạo tài khoản.
+                    </p>
+                </div>
+
+                <EditForm Model="@models" OnValidSubmit="OnValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="grid gap-6 md:grid-cols-12">
+                        <!-- Left: Form -->
+                        <div class="md:col-span-7">
+                            <div class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+                                <div class="p-6 space-y-5">
+                                    <!-- Email -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700">Email *</label>
+                                        <p class="mt-1 text-xs text-slate-500">
+                                            Hỗ trợ Email: Gmail, Yahoo, Hotmail, Outlook,..
+                                        </p>
+                                        <input type="email"
+                                               autocomplete="email"
+                                               placeholder="you@example.com"
+                                               class="@InputClass(_processing)"
+                                               @bind="models.Email"
+                                               disabled="@_processing" />
+                                    </div>
+
+                                    <!-- First / Last -->
+                                    <div class="grid gap-4 sm:grid-cols-2">
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700">Họ *</label>
+                                            <p class="mt-1 text-xs text-slate-500">Họ tối thiểu 3 ký tự</p>
+                                            <input type="text"
+                                                   autocomplete="given-name"
+                                                   placeholder="Nguyễn"
+                                                   class="@InputClass(_processing)"
+                                                   @bind="models.FirstName"
+                                                   disabled="@_processing" />
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700">Tên *</label>
+                                            <p class="mt-1 text-xs text-slate-500">Tên tối thiểu 3 ký tự</p>
+                                            <input type="text"
+                                                   autocomplete="family-name"
+                                                   placeholder="Văn A"
+                                                   class="@InputClass(_processing)"
+                                                   @bind="models.LastName"
+                                                   disabled="@_processing" />
+                                        </div>
+                                    </div>
+
+                                    <!-- Gender -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700">Giới tính</label>
+                                        <select class="@SelectClass(_processing)"
+                                                @bind="models.Gender"
+                                                disabled="@_processing">
+                                            <option value="">-- Chọn --</option>
+                                            <option value="Nam">Nam</option>
+                                            <option value="Nữ">Nữ</option>
+                                            <option value="Khác">Khác</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Password -->
+                                    <div>
+                                        <div class="flex items-center justify-between">
+                                            <label class="block text-sm font-medium text-slate-700">Mật khẩu *</label>
+
+                                            <button type="button"
+                                                    class="text-sm font-medium text-emerald-700 hover:text-emerald-800 disabled:opacity-50"
+                                                    disabled="@_processing"
+                                                    @onclick="TogglePassword">
+                                                @(isShowPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu")
+                                            </button>
+                                        </div>
+
+                                        <p class="mt-1 text-xs text-slate-500">
+                                            8-15 ký tự, 1 ký tự đặc biệt (!,#,$,%,..), 1 ký tự viết hoa, 1 chữ số.
+                                            Ví dụ: Abc!1234
+                                        </p>
+
+                                        <div class="mt-2 relative">
+                                            <input type="@(isShowPassword ? "text" : "password")"
+                                                   autocomplete="new-password"
+                                                   placeholder="••••••••"
+                                                   class="@($"{InputClass(_processing)} pr-12")"
+                                                   @bind="models.Password"
+                                                   disabled="@_processing" />
+
+                                            <button type="button"
+                                                    class="absolute inset-y-0 right-0 px-4 text-slate-500 hover:text-slate-700 disabled:opacity-50"
+                                                    disabled="@_processing"
+                                                    @onclick="TogglePassword"
+                                                    aria-label="Hiện/ẩn mật khẩu">
+                                                @if (isShowPassword)
+                                                {
+                                                    <!-- eye-off -->
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.477 10.48a3 3 0 004.243 4.243" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.88 9.88A3 3 0 0112 9c1.657 0 3 1.343 3 3 0 .407-.081.795-.228 1.149" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.228 6.228C4.58 7.493 3.3 9.156 2.458 12c1.274 4.057 5.065 7 9.542 7 1.557 0 3.043-.356 4.387-.999" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5c1.61 0 3.147.38 4.52 1.05" />
+                                                    </svg>
+                                                }
+                                                else
+                                                {
+                                                    <!-- eye -->
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    </svg>
+                                                }
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Confirm Password -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700">Nhập lại mật khẩu *</label>
+                                        <p class="mt-1 text-xs text-slate-500">Vui lòng nhập lại mật khẩu bên trên</p>
+
+                                        <div class="mt-2 relative">
+                                            <input type="@(isShowPassword ? "text" : "password")"
+                                                   autocomplete="new-password"
+                                                   placeholder="••••••••"
+                                                   class="@($"{InputClass(_processing)} pr-12")"
+                                                   @bind="models.ConfirmPassword"
+                                                   disabled="@_processing" />
+
+                                            <button type="button"
+                                                    class="absolute inset-y-0 right-0 px-4 text-slate-500 hover:text-slate-700 disabled:opacity-50"
+                                                    disabled="@_processing"
+                                                    @onclick="TogglePassword"
+                                                    aria-label="Hiện/ẩn mật khẩu">
+                                                @if (isShowPassword)
+                                                {
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.477 10.48a3 3 0 004.243 4.243" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.88 9.88A3 3 0 0112 9c1.657 0 3 1.343 3 3 0 .407-.081.795-.228 1.149" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.228 6.228C4.58 7.493 3.3 9.156 2.458 12c1.274 4.057 5.065 7 9.542 7 1.557 0 3.043-.356 4.387-.999" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5c1.61 0 3.147.38 4.52 1.05" />
+                                                    </svg>
+                                                }
+                                                else
+                                                {
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    </svg>
+                                                }
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="flex items-center justify-between border-t border-slate-100 px-6 py-4">
+                                    <button type="button"
+                                            class="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 hover:bg-rose-100 focus:outline-none focus:ring-4 focus:ring-rose-100 disabled:opacity-50"
+                                            disabled="@_processing"
+                                            @onclick="CleanForm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-3-6.708M21 3v6h-6" />
+                                        </svg>
+                                        <span class="ml-2 text-sm font-semibold">Làm mới</span>
+                                    </button>
+
+                                    <button type="submit"
+                                            class="@SubmitClass(_processing)"
+                                            disabled="@_processing">
+                                        @if (_processing)
+                                        {
+                                            <svg class="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"></path>
+                                            </svg>
+                                            <span class="ml-2">Đang xử lý..</span>
+                                        }
+                                        else
+                                        {
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            <span class="ml-2">Đăng ký</span>
+                                        }
+                                    </button>
+                                </div>
+
+                                <div class="px-6 pb-6">
+                                    <a href="/login" class="text-sm font-medium text-emerald-700 hover:text-emerald-800">
+                                        Đăng nhập ngay! nếu bạn đã có tài khoản
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Errors + Image -->
+                        <div class="md:col-span-5">
+                            <div class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-6">
+                                <div class="space-y-2">
+                                    <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                                        <ValidationSummary />
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(textResult))
+                                    {
+                                        <div class="rounded-xl border @(isSuccess ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-700") px-4 py-3 text-sm">
+                                            @textResult
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="mt-6 overflow-hidden rounded-xl ring-1 ring-slate-200">
+                                    <img class="w-full h-auto object-cover"
+                                         src="imgs/photos/register1.jpg"
+                                         alt="Register" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
+</div>
+
+@code {
+    private static string InputClass(bool disabled) =>
+        "mt-2 block w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none " +
+        "focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 " +
+        (disabled ? "opacity-60 cursor-not-allowed" : "");
+
+    private static string SelectClass(bool disabled) =>
+        "mt-2 block w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none " +
+        "focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 " +
+        (disabled ? "opacity-60 cursor-not-allowed" : "");
+
+    private static string SubmitClass(bool disabled) =>
+        "inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-white font-semibold " +
+        "shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-200 " +
+        (disabled ? "opacity-70 cursor-not-allowed" : "");
+}
