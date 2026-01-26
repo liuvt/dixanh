@@ -2,14 +2,15 @@
 @page "/login"
 @inherits AppLoginBase
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@layout MainEmptyLayout
 
 <PageTitle>Đăng nhập tài khoản - Đi Xanh</PageTitle>
 
-<div class="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-10">
+<div class="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
     <AuthorizeView Context="authContext">
         <NotAuthorized>
             <div class="w-full max-w-md">
-                <div class="text-center mb-6">
+                <div class="mb-6 text-center">
                     <h1 class="text-2xl font-semibold text-slate-900">Đăng nhập tài khoản</h1>
                     <p class="mt-1 text-sm text-slate-500">
                         Nhập email và mật khẩu để truy cập hệ thống.
@@ -20,7 +21,7 @@
                     <EditForm Model="@models" OnValidSubmit="OnValidSubmit">
                         <DataAnnotationsValidator />
 
-                        <div class="p-6 space-y-4">
+                        <div class="space-y-4 p-6">
                             <!-- Email -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700">Email</label>
@@ -38,7 +39,7 @@
                                 <label class="block text-sm font-medium text-slate-700">Mật khẩu</label>
                                 <p class="mt-1 text-xs text-slate-500">Vui lòng bảo vệ mật khẩu!</p>
 
-                                <div class="mt-2 relative">
+                                <div class="relative mt-2">
                                     <input class="@($"{InputClass(_processing)} pr-12")"
                                            type="@(_showPassword ? "text" : "password")"
                                            autocomplete="current-password"
@@ -78,7 +79,7 @@
                             <div class="flex items-center justify-between pt-2">
                                 <!-- Reset -->
                                 <button type="button"
-                                        class="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 hover:bg-rose-100 focus:outline-none focus:ring-4 focus:ring-rose-100 disabled:opacity-50"
+                                        class="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 hover:bg-rose-100 focus:ring-4 focus:ring-rose-100 focus:outline-none disabled:opacity-50"
                                         disabled="@_processing"
                                         @onclick="CleanForm">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -136,12 +137,13 @@
                     </EditForm>
                 </div>
             </div>
+            <!-- Ds ảnh brand swiper-->
+            <SwiperBrand />
         </NotAuthorized>
     </AuthorizeView>
 </div>
 
-<!-- Ds ảnh brand swiper-->
-<SwiperBrand />
+
 
 @code {
     private bool _showPassword;

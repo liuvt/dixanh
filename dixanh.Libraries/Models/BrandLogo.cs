@@ -45,6 +45,29 @@ public class DataBrandLogo
                     lineOne = "imgs/logosbrand/07dell.jpg",
                     lineTwo = "imgs/logosbrand/014thegioididong.jpg"
                 },
+                new BrandLogo
+                {
+                    lineOne = "imgs/logosbrand/08viettel.jpg"
+                },
+                new BrandLogo
+                {
+                    lineOne = "imgs/logosbrand/09vinaphone.jpg"
+                },
+                new BrandLogo{
+                    lineOne = "imgs/logosbrand/010mbbank.jpg"
+                },
+                new BrandLogo{
+                    lineOne = "imgs/logosbrand/011lazada.jpg"
+                },
+                new BrandLogo{
+                    lineOne = "imgs/logosbrand/012shopee.jpg"
+                },
+                new BrandLogo{
+                    lineOne = "imgs/logosbrand/013tiki.jpg"
+                },
+                new BrandLogo{
+                    lineOne = "imgs/logosbrand/014thegioididong.jpg"
+                },
             }
         );
     }

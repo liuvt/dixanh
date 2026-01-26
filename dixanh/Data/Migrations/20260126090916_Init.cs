@@ -60,6 +60,29 @@ namespace dixanh.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Vehicles",
+                columns: table => new
+                {
+                    VehicleId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    LicensePlate = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    VehicleCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Brand = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SeatCount = table.Column<int>(type: "int", nullable: true),
+                    Color = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ManufactureDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    VehicleType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ChassisNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EngineNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Vehicles", x => x.VehicleId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -165,6 +188,49 @@ namespace dixanh.Data.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "CooperationProfiles",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    OperatingArea = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    OperatingUnit = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ParkingLot = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ContractStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BusinessStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ContractStartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ContractEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ContractAttachmentUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BusinessStartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    BusinessStopDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    BusinessStopReason = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CooperationType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BusinessModel = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CooperationSource = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CompanyFranchiseOwnerName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    InstallmentOwnerName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RenterName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CitizenIdNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CitizenIdIssueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CitizenIdIssuePlace = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PermanentAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ContactAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    VehicleId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CooperationProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CooperationProfiles_Vehicles_VehicleId",
+                        column: x => x.VehicleId,
+                        principalTable: "Vehicles",
+                        principalColumn: "VehicleId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 table: "AspNetRoles",
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
@@ -173,7 +239,8 @@ namespace dixanh.Data.Migrations
                     { "1", null, "Owner", "OWNER" },
                     { "2", null, "Administrator", "ADMINISTRATOR" },
                     { "3", null, "Manager", "MANAGER" },
-                    { "4", null, "Driver", "DRIVER" }
+                    { "4", null, "Driver", "DRIVER" },
+                    { "5", null, "Employee", "EMPLOYEE" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -214,6 +281,11 @@ namespace dixanh.Data.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CooperationProfiles_VehicleId",
+                table: "CooperationProfiles",
+                column: "VehicleId");
         }
 
         /// <inheritdoc />
@@ -235,10 +307,16 @@ namespace dixanh.Data.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "CooperationProfiles");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "Vehicles");
         }
     }
 }

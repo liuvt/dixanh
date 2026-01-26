@@ -17,6 +17,8 @@ public partial class dixanhDBContext : IdentityDbContext<AppUser>
     }
 
     //Call Model to create table in database
+    public virtual DbSet<Vehicle> Vehicles { get; set; } = null!;
+    public virtual DbSet<CooperationProfile> CooperationProfiles { get; set; } = null!;
 
     //Config to connection sql server
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -29,7 +31,6 @@ public partial class dixanhDBContext : IdentityDbContext<AppUser>
                     throw new InvalidOperationException("Can't find ConnectionStrings in appsettings.json!")
             );
         }
-
     }
 
     //Data seeding
@@ -37,7 +38,7 @@ public partial class dixanhDBContext : IdentityDbContext<AppUser>
     {
         base.OnModelCreating(modelBuilder);
 
-        // Nếu muốn seed Roles bằng migration thì để đây (nhưng phải tĩnh, không DateTime.Now)
+        /* Nếu muốn seed Roles bằng migration thì để đây (nhưng phải tĩnh, không DateTime.Now)*/
         modelBuilder.Entity<IdentityRole>().HasData(
             new IdentityRole { Id = "1", Name = "Owner", NormalizedName = "OWNER" },
             new IdentityRole { Id = "2", Name = "Administrator", NormalizedName = "ADMINISTRATOR" },
@@ -45,7 +46,7 @@ public partial class dixanhDBContext : IdentityDbContext<AppUser>
             new IdentityRole { Id = "4", Name = "Driver", NormalizedName = "DRIVER" },
             new IdentityRole { Id = "5", Name = "Employee", NormalizedName = "EMPLOYEE" }
         );
-
+        
         // BỎ hoàn toàn đoạn HasData cho AspNetUserRoles
         // modelBuilder.Entity<IdentityUserRole<string>>().HasData(...);
     }
@@ -55,7 +56,6 @@ public partial class dixanhDBContext : IdentityDbContext<AppUser>
 
 //Create mirations: dotnet ef migrations add Init -o Data/Migrations
 //Create database: dotnet ef database update
-
 
 /* 
  * ///Publish project: 

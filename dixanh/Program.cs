@@ -47,8 +47,8 @@ builder.Services.AddScoped<CookieContainer>();
 
 //Add identity
 builder.Services.AddIdentity<AppUser, IdentityRole>()
-        .AddEntityFrameworkStores<dixanhDBContext>()
-        .AddDefaultTokenProviders();
+    .AddEntityFrameworkStores<dixanhDBContext>()
+    .AddDefaultTokenProviders();
 
 //Add connection string
 builder.Services.AddDbContext<dixanhDBContext>(opt =>
@@ -171,13 +171,15 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
 var app = builder.Build();
 
 // migrate 
-/*
+/**/
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<dixanhDBContext>();
     await db.Database.MigrateAsync();
 }
-await Seedding.SeedIdentityAsync(app.Services);*/
+await Seedding.SeedIdentityAsync(app.Services);
+await Seedding.SeedVehiclesAsync(app.Services);
+
 
 // Đọc X-Forwarded-Proto, X-Forwarded-Host từ Nginx
 /* var baseUrl = $"{Request.Scheme}://{Request.Host}";

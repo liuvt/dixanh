@@ -12,7 +12,7 @@ public class AppLoginBase : ComponentBase
 
     protected AppLoginDTO models = new();
     protected bool _processing;
-    protected string? textResult;
+    protected string? textResult { get; set; } = string.Empty;
 
     // Cờ để đảm bảo chỉ check auth khi đã interactive (an toàn cho JS interop)
     private bool _checkedAuthOnce;
