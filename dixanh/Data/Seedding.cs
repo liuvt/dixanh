@@ -53,17 +53,25 @@ public static class Seedding
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<dixanhDBContext>();
 
-        // Nếu đã có dữ liệu thì không seed nữa
+        // Đảm bảo DB đã apply migration
+        await db.Database.MigrateAsync();
+
         if (await db.Vehicles.AnyAsync())
             return;
 
         var vi = CultureInfo.GetCultureInfo("vi-VN");
 
-        DateTime ParseDate(string s) =>
-            DateTime.ParseExact(s, "dd/MM/yyyy", vi);
+        DateTime ParseDate(string s)
+        {
+            var dt = DateTime.ParseExact(s, "dd/MM/yyyy", vi);
+            return DateTime.SpecifyKind(dt, DateTimeKind.Local).ToUniversalTime();
+        }
 
-        DateTime ParseDateTime(string s) =>
-            DateTime.ParseExact(s, "dd/MM/yyyy HH:mm:ss", vi);
+        DateTime ParseDateTime(string s)
+        {
+            var dt = DateTime.ParseExact(s, "dd/MM/yyyy HH:mm:ss", vi);
+            return DateTime.SpecifyKind(dt, DateTimeKind.Local).ToUniversalTime();
+        }
 
         var vehicles = new List<Vehicle>
         {
@@ -81,7 +89,8 @@ public static class Seedding
                 EngineNumber = "VFCAFB241080063",
                 CreatedBy = "Lưu Văn",
                 CreatedAt = ParseDateTime("25/01/2026 16:06:03"),
-                UpdatedAt = null
+                UpdatedAt = null,
+                StatusId = 1
             },
             new Vehicle
             {
@@ -97,7 +106,8 @@ public static class Seedding
                 EngineNumber = "VFCAFB23C270090",
                 CreatedBy = "Lưu Văn",
                 CreatedAt = ParseDateTime("25/01/2026 16:06:03"),
-                UpdatedAt = null
+                UpdatedAt = null,
+                StatusId = 1
             },
             new Vehicle
             {
@@ -113,7 +123,8 @@ public static class Seedding
                 EngineNumber = "VFCAFB23C270022",
                 CreatedBy = "Lưu Văn",
                 CreatedAt = ParseDateTime("24/01/2026 00:00:00"),
-                UpdatedAt = ParseDateTime("25/01/2026 16:06:03")
+                UpdatedAt = ParseDateTime("25/01/2026 16:06:03"),
+                StatusId = 1
             },
             new Vehicle
             {
@@ -129,7 +140,8 @@ public static class Seedding
                 EngineNumber = "VFCAFB23C180105",
                 CreatedBy = "Lưu Văn",
                 CreatedAt = ParseDateTime("25/01/2026 16:06:03"),
-                UpdatedAt = null
+                UpdatedAt = null,
+                StatusId = 1
             },
             new Vehicle
             {
@@ -145,7 +157,8 @@ public static class Seedding
                 EngineNumber = "VFCAFB23C270074",
                 CreatedBy = "Lưu Văn",
                 CreatedAt = ParseDateTime("25/01/2026 16:06:03"),
-                UpdatedAt = null
+                UpdatedAt = null,
+                StatusId = 1
             },
             new Vehicle
             {
@@ -161,7 +174,8 @@ public static class Seedding
                 EngineNumber = "VFCAFB23C270165",
                 CreatedBy = "Lưu Văn",
                 CreatedAt = ParseDateTime("24/01/2026 00:00:00"),
-                UpdatedAt = ParseDateTime("25/01/2026 16:06:03")
+                UpdatedAt = ParseDateTime("25/01/2026 16:06:03"),
+                StatusId = 1
             },
             new Vehicle
             {
@@ -177,7 +191,8 @@ public static class Seedding
                 EngineNumber = "VFCAFB23C190103",
                 CreatedBy = "Lưu Văn",
                 CreatedAt = ParseDateTime("25/01/2026 16:06:03"),
-                UpdatedAt = null
+                UpdatedAt = null,
+                StatusId = 1
             }
         };
 

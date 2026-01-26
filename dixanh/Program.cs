@@ -65,13 +65,6 @@ builder.Services.AddScoped(
         //BaseAddress = new Uri(builder.Configuration["API:FontEnd"] ?? throw new InvalidOperationException("Can't found [Secret Key] in appsettings.json !"))
     });
 
-builder.Services.AddHttpClient("n8n", client =>
-{
-    client.BaseAddress = new Uri(
-        builder.Configuration["API:Default"]
-        ?? throw new InvalidOperationException("Missing API:Default"));
-});
-
 // API: Add Jwt, Gooogle Authentication
 builder.Services.AddAuthentication(options =>
 {
@@ -119,6 +112,11 @@ builder.Services.AddSwaggerGen(
 builder.Services.AddAuthorization();
 //For SQL Server
 builder.Services.AddScoped<IAuthServer, AuthServer>();
+
+// Register application services
+builder.Services.AddScoped<IVehicleService, VehicleService>();
+builder.Services.AddScoped<IVehicleStatusHistoryService, VehicleStatusHistoryService>();
+builder.Services.AddScoped<IVehicleStatusService, VehicleStatusService>();
 #endregion
 
 #region Font-end Register services

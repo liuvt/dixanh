@@ -29,11 +29,11 @@
                             Quản lý xe
                         </NavLink>
 
-                        <NavLink href="/drivers"
+                        <NavLink href="/CooperationProfile"
                                  class="group mt-1 flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white/5"
                                  ActiveClass="border border-emerald-500/20 bg-emerald-500/15 text-emerald-200">
                             <span class="h-2 w-2 rounded-full bg-emerald-400 opacity-0 transition-opacity group-aria-[current=page]:opacity-100"></span>
-                            Tài xế
+                            Quản lý hợp đồng
                         </NavLink>
 
                         <NavLink href="/contracts"
@@ -52,3 +52,31 @@
         </div>
     </div>
 </div>
+
+@code {
+
+    [Inject]
+    protected IAuthService AuthService { get; set; } = default!;
+    [Inject]
+    protected NavigationManager Nav { get; set; } = default!;
+    protected bool _checkedAuthOnce;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _checkedAuthOnce) return;
+        _checkedAuthOnce = true;
+
+        try
+        {
+            // Nếu CheckAuthenState() có JS interop (localStorage), gọi ở đây là đúng chỗ
+            if (!await AuthService.CheckAuthenState())
+                Nav.NavigateTo("/login", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            // Đừng nuốt exception, ít nhất log để biết nguyên nhân thật
+            Console.WriteLine(ex.Message, "CheckAuthenState failed on login page.");
+        }
+    }
+}
+

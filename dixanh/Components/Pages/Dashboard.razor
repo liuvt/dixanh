@@ -1,10 +1,8 @@
 ﻿@page "/dashboard"
-@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Dashboard - Đi Xanh</PageTitle>
 <AuthorizeView Context="authContext">
     <Authorized>
-
         <h1>Hello, world!</h1>
         Welcome to your new app.
     </Authorized>
@@ -12,3 +10,4 @@
 
     </NotAuthorized>
 </AuthorizeView>
+

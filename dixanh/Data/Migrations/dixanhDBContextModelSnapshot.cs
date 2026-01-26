@@ -379,7 +379,7 @@ namespace dixanh.Data.Migrations
 
                     b.Property<string>("VehicleId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(36)");
 
                     b.HasKey("Id");
 
@@ -391,34 +391,42 @@ namespace dixanh.Data.Migrations
             modelBuilder.Entity("dixanh.Libraries.Models.Vehicle", b =>
                 {
                     b.Property<string>("VehicleId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Brand")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("ChassisNumber")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Color")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("EngineNumber")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("LicensePlate")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<DateTime?>("ManufactureDate")
                         .HasColumnType("datetime2");
@@ -426,20 +434,134 @@ namespace dixanh.Data.Migrations
                     b.Property<int?>("SeatCount")
                         .HasColumnType("int");
 
+                    b.Property<int>("StatusId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("VehicleCode")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("VehicleType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.HasKey("VehicleId");
 
+                    b.HasIndex("LicensePlate")
+                        .IsUnique();
+
+                    b.HasIndex("VehicleCode");
+
+                    b.HasIndex("StatusId", "CreatedAt");
+
                     b.ToTable("Vehicles");
+                });
+
+            modelBuilder.Entity("dixanh.Libraries.Models.VehicleStatus", b =>
+                {
+                    b.Property<int>("StatusId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StatusId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("StatusId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive", "SortOrder");
+
+                    b.ToTable("VehicleStatuses");
+
+                    b.HasData(
+                        new
+                        {
+                            StatusId = 1,
+                            Code = "ACTIVE",
+                            IsActive = true,
+                            Name = "Hoạt động",
+                            SortOrder = 1
+                        },
+                        new
+                        {
+                            StatusId = 2,
+                            Code = "INACTIVE",
+                            IsActive = true,
+                            Name = "Ngừng hoạt động",
+                            SortOrder = 2
+                        },
+                        new
+                        {
+                            StatusId = 3,
+                            Code = "MAINTENANCE",
+                            IsActive = true,
+                            Name = "Bảo trì",
+                            SortOrder = 3
+                        });
+                });
+
+            modelBuilder.Entity("dixanh.Libraries.Models.VehicleStatusHistory", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ChangedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("FromStatusId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("ToStatusId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("VehicleId")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromStatusId");
+
+                    b.HasIndex("ToStatusId");
+
+                    b.HasIndex("VehicleId");
+
+                    b.ToTable("VehicleStatusHistories");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -506,7 +628,51 @@ namespace dixanh.Data.Migrations
 
             modelBuilder.Entity("dixanh.Libraries.Models.Vehicle", b =>
                 {
+                    b.HasOne("dixanh.Libraries.Models.VehicleStatus", "Status")
+                        .WithMany("Vehicles")
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Status");
+                });
+
+            modelBuilder.Entity("dixanh.Libraries.Models.VehicleStatusHistory", b =>
+                {
+                    b.HasOne("dixanh.Libraries.Models.VehicleStatus", "FromStatus")
+                        .WithMany()
+                        .HasForeignKey("FromStatusId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("dixanh.Libraries.Models.VehicleStatus", "ToStatus")
+                        .WithMany()
+                        .HasForeignKey("ToStatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("dixanh.Libraries.Models.Vehicle", "Vehicle")
+                        .WithMany("StatusHistories")
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FromStatus");
+
+                    b.Navigation("ToStatus");
+
+                    b.Navigation("Vehicle");
+                });
+
+            modelBuilder.Entity("dixanh.Libraries.Models.Vehicle", b =>
+                {
                     b.Navigation("CooperationProfiles");
+
+                    b.Navigation("StatusHistories");
+                });
+
+            modelBuilder.Entity("dixanh.Libraries.Models.VehicleStatus", b =>
+                {
+                    b.Navigation("Vehicles");
                 });
 #pragma warning restore 612, 618
         }

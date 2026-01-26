@@ -1,153 +1,97 @@
 ﻿@page "/vehicles"
 @inherits VehicleBase
-@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Quản lý xe - Đi Xanh</PageTitle>
+
 <AuthorizeView Context="authContext">
     <Authorized>
-
-        <!-- Main -->
         <main class="flex-1 p-2">
-            <!-- Breadcrumb + title -->
             <div class="mb-4">
-                <div class="text-sm text-slate-500">Dashboard / <span class="text-slate-700">List vehicle</span></div>
-                <div class="mt-1 text-2xl font-semibold text-slate-900">List vehicle</div>
+                <div class="text-sm text-slate-500">Dashboard / <span class="text-slate-700">Vehicles</span></div>
+                <div class="mt-1 flex items-center justify-between gap-3">
+                    <div class="text-2xl font-semibold text-slate-900">List vehicle</div>
+
+                    <button class="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700"
+                            @onclick="() => OpenDrawerCreate(authContext.User.Identity?.Name)">
+                        + Tạo mới
+                    </button>
+                </div>
             </div>
 
-            <!-- Filter card -->
+            <!-- Filter -->
             <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div class="p-4">
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Mã xe</label>
-                            <input class="mt-1 w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
-                                   placeholder="MaXe" />
-                        </div>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <div>
                             <label class="text-sm font-medium text-slate-700">Biển kiểm soát</label>
                             <input class="mt-1 w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
-                                   placeholder="68G-000.01" />
+                                   placeholder="68G-000.01"
+                                   @bind="_filterPlate" @bind:event="oninput" />
                         </div>
+
                         <div>
                             <label class="text-sm font-medium text-slate-700">Số hiệu xe</label>
                             <input class="mt-1 w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
-                                   placeholder="RG7032" />
+                                   placeholder="RG7032"
+                                   @bind="_filterVehicleCode" @bind:event="oninput" />
                         </div>
+
+                        <div>
+                            <label class="text-sm font-medium text-slate-700">Tạo lúc (UTC, 24h)</label>
+                            <div class="mt-1 grid grid-cols-2 gap-2">
+                                <input type="datetime-local" class="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
+                                       @bind="_createdFromLocal" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium text-slate-700">Cập nhật lúc (UTC, 24h)</label>
+                            <div class="mt-1 grid grid-cols-2 gap-2">
+                                <input type="datetime-local" class="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
+                                       @bind="_createdToLocal" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium text-slate-700">Trạng thái</label>
+                            <select class="mt-1 w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
+                                    @bind="_filterStatusId">
+                                <option value="">All</option>
+                                @foreach (var s in _statuses)
+                                {
+                                    <option value="@s.StatusId">@s.Name</option>
+                                }
+                            </select>
+                        </div>
+
                         <div>
                             <label class="text-sm font-medium text-slate-700">Thương hiệu</label>
                             <input class="mt-1 w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
-                                   placeholder="Vinfast VF5" />
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Loại xe</label>
-                            <select class="mt-1 w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500">
-                                <option value="">All</option>
-                                <option>Xe điện</option>
-                                <option>Xe xăng</option>
-                            </select>
+                                   placeholder="Vinfast VF5"
+                                   @bind="_filterBrand" @bind:event="oninput" />
                         </div>
 
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Số chỗ</label>
-                            <input type="number"
-                                   class="mt-1 w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
-                                   placeholder="4" />
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Màu xe</label>
-                            <input class="mt-1 w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
-                                   placeholder="Xanh 1 / Trắng ..." />
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Ngày SX</label>
-                            <div class="mt-1 grid grid-cols-2 gap-2">
-                                <input type="date" class="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
-                                <input type="date" class="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
-                            </div>
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Số khung</label>
-                            <input class="mt-1 w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
-                                   placeholder="RLNV..." />
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Số máy</label>
-                            <input class="mt-1 w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
-                                   placeholder="VFCA..." />
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Người tạo</label>
-                            <input class="mt-1 w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
-                                   placeholder="Lưu Văn" />
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Thời gian tạo</label>
-                            <div class="mt-1 grid grid-cols-2 gap-2">
-                                <input type="datetime-local" class="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
-                                <input type="datetime-local" class="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
-                            </div>
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Thời gian cập nhật</label>
-                            <div class="mt-1 grid grid-cols-2 gap-2">
-                                <input type="datetime-local" class="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
-                                <input type="datetime-local" class="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Trạng thái xe</label>
-                            <select class="mt-1 w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500">
-                                <option value="">All</option>
-                                <option>Đang hoạt động</option>
-                                <option>Bảo dưỡng</option>
-                                <option>Ngưng</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700">Khu vực</label>
-                            <select class="mt-1 w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500">
-                                <option value="">All</option>
-                                <option>Rạch Giá</option>
-                                <option>Cần Thơ</option>
-                                <option>Phú Quốc</option>
-                                <option>Sóc Trăng</option>
-                                <option>Hậu Giang</option>
-                                <option>Cà Mau</option>
-                            </select>
-                        </div>
                     </div>
 
                     <div class="mt-4 flex flex-wrap justify-end gap-2">
-                        <button class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50">
+                        <button class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50"
+                                @onclick="ResetFilters">
                             Reset
                         </button>
-                        <button class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50">
-                            Settings
-                        </button>
-                        <button class="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700">
-                            Search
-                        </button>
-                        <button class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50">
-                            Export
-                        </button>
-                        <button class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50">
-                            Import
+                        <button class="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700"
+                                @onclick="() => LoadAsync(page: 1)">
+                            Tìm kiếm
                         </button>
                     </div>
                 </div>
             </section>
 
-            <!-- Table card -->
+            <!-- Table -->
             <section class="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div class="flex items-center justify-between p-4">
                     <div class="text-sm text-slate-700">
-                        <span class="font-semibold">Total record:</span> 310
+                        <span class="font-semibold">Số bảng ghi:</span> @_total
                     </div>
-                    <button class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                        Settings ▾
-                    </button>
                 </div>
 
                 <div class="overflow-auto border-t border-slate-200">
@@ -161,59 +105,108 @@
                                 <th class="px-4 py-3 font-medium">Số chỗ</th>
                                 <th class="px-4 py-3 font-medium">Màu</th>
                                 <th class="px-4 py-3 font-medium">Ngày SX</th>
-                                <th class="px-4 py-3 font-medium">Loại xe</th>
-                                <th class="px-4 py-3 font-medium">Số khung</th>
-                                <th class="px-4 py-3 font-medium">Số máy</th>
-                                <th class="px-4 py-3 font-medium">Người tạo</th>
+                                <th class="px-4 py-3 font-medium">Trạng thái</th>
                                 <th class="px-4 py-3 font-medium">Tạo lúc</th>
                                 <th class="px-4 py-3 font-medium">Cập nhật</th>
                                 <th class="px-4 py-3 font-medium">Actions</th>
                             </tr>
                         </thead>
+
                         <tbody class="divide-y divide-slate-200">
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-4 py-3 text-slate-900">77daf2429c...</td>
-                                <td class="px-4 py-3">68G-000.45</td>
-                                <td class="px-4 py-3">RG7032</td>
-                                <td class="px-4 py-3">Vinfast VF5</td>
-                                <td class="px-4 py-3">4</td>
-                                <td class="px-4 py-3">Xanh 1</td>
-                                <td class="px-4 py-3">28/01/2026</td>
-                                <td class="px-4 py-3">
-                                    <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-emerald-700">
-                                        Xe điện
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3">RLNVJ5J...</td>
-                                <td class="px-4 py-3">VFCAFB...</td>
-                                <td class="px-4 py-3">Lưu Văn</td>
-                                <td class="px-4 py-3">25/01/2028 16:06:03</td>
-                                <td class="px-4 py-3">25/01/2028 16:06:03</td>
-                                <td class="px-4 py-3">
-                                    <div class="flex items-center gap-2">
-                                        <button class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-50">View</button>
-                                        <button class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-50">Edit</button>
-                                        <button class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-50">History</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <!-- ... rows -->
+                            @if (_loading)
+                            {
+                                <tr><td class="px-4 py-6 text-slate-600" colspan="11">Loading...</td></tr>
+                            }
+                            else if (_items.Count == 0)
+                            {
+                                <tr><td class="px-4 py-6 text-slate-600" colspan="11">No data</td></tr>
+                            }
+                            else
+                            {
+                                @foreach (var v in _items)
+                                {
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="px-4 py-3 text-slate-900">@ShortId(v.VehicleId)</td>
+                                        <td class="px-4 py-3">@v.LicensePlate</td>
+                                        <td class="px-4 py-3">@v.VehicleCode</td>
+                                        <td class="px-4 py-3">@v.Brand</td>
+                                        <td class="px-4 py-3">@v.SeatCount</td>
+                                        <td class="px-4 py-3">@v.Color</td>
+                                        <td class="px-4 py-3">@FormatDate(v.ManufactureDate)</td>
+                                        <td class="px-4 py-3">
+                                            @StatusBadge(v.Status?.Code, v.Status?.Name)
+                                        </td>
+                                        <td class="px-4 py-3">@FormatDateTime(v.CreatedAt)</td>
+                                        <td class="px-4 py-3">@FormatDateTime(v.UpdatedAt)</td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center gap-2">
+                                                <button class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-50"
+                                                        @onclick="() => OpenDrawerView(v.VehicleId)">
+                                                    View
+                                                </button>
+                                                <button class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-50"
+                                                        @onclick="() => OpenDrawerEdit(v.VehicleId)">
+                                                    Edit
+                                                </button>
+                                                <button class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-50"
+                                                        @onclick="() => OpenDrawerHistory(v.VehicleId)">
+                                                    History
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Footer / pagination placeholder -->
                 <div class="flex items-center justify-between p-4 text-sm text-slate-600">
-                    <div>Showing 1–20</div>
+                    <div>Hiện @((_page - 1) * _pageSize + 1)–@Math.Min(_page * _pageSize, _total)</div>
                     <div class="flex items-center gap-2">
-                        <button class="rounded border border-slate-300 px-3 py-1.5 hover:bg-slate-50">Prev</button>
-                        <button class="rounded border border-slate-300 px-3 py-1.5 hover:bg-slate-50">Next</button>
+                        <button class="rounded border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
+                                disabled="@(_page <= 1)"
+                                @onclick="() => LoadAsync(_page - 1)">
+                            Lùi lại
+                        </button>
+                        <button class="rounded border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
+                                disabled="@(_page* _pageSize>=_total)"
+                                @onclick="() => LoadAsync(_page + 1)">
+                            Kế tiếp
+                        </button>
                     </div>
                 </div>
             </section>
+
+            <!-- Drawer -->
+            <VehicleDrawer Open="_drawerOpen"
+                           Mode="_drawerMode"
+                           VehicleId="_selectedVehicleId"
+                           CurrentUserName="_currentUserName"
+                           OnClose="CloseDrawer"
+                           OnSaved="ReloadAfterSave" />
         </main>
     </Authorized>
-    <NotAuthorized>
-
-    </NotAuthorized>
 </AuthorizeView>
+
+@code {
+    private static string ShortId(string id) => string.IsNullOrWhiteSpace(id) ? "" : (id.Length <= 10 ? id : id[..10] + "...");
+    private static string FormatDate(DateTime? d) => d.HasValue ? d.Value.ToString("dd/MM/yyyy") : "";
+    private static string FormatDateTime(DateTime? d) => d.HasValue ? d.Value.ToString("dd/MM/yyyy HH:mm:ss") : "";
+
+    private RenderFragment StatusBadge(string? code, string? name) => builder =>
+    {
+        var (cls, text) = code switch
+        {
+            "ACTIVE" => ("border-emerald-200 bg-emerald-50 text-emerald-700", name ?? "Hoạt động"),
+            "MAINTENANCE" => ("border-amber-200 bg-amber-50 text-amber-800", name ?? "Bảo trì"),
+            "INACTIVE" => ("border-slate-200 bg-slate-50 text-slate-700", name ?? "Ngừng"),
+            _ => ("border-slate-200 bg-slate-50 text-slate-700", name ?? "N/A")
+        };
+
+        builder.OpenElement(0, "span");
+        builder.AddAttribute(1, "class", $"inline-flex items-center rounded-full border px-2 py-0.5 {cls}");
+        builder.AddContent(2, text);
+        builder.CloseElement();
+    };
+}
