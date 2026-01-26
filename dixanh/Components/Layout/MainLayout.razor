@@ -1,5 +1,15 @@
 ﻿@inherits LayoutComponentBase
+@inject IAuthService AuthService
+@inject NavigationManager Nav
 
+@if (_checking)
+{
+    <div class="min-h-screen flex items-center justify-center bg-slate-50">
+        Đang kiểm tra đăng nhập...
+    </div>
+}
+else if (_authed)
+{
 <div hidden></div>
 <div class="isolate">
     <div class="max-w-screen overflow-x-hidden">
@@ -52,31 +62,39 @@
         </div>
     </div>
 </div>
+}
 
 @code {
-
-    [Inject]
-    protected IAuthService AuthService { get; set; } = default!;
-    [Inject]
-    protected NavigationManager Nav { get; set; } = default!;
-    protected bool _checkedAuthOnce;
+    bool _checking = true;
+    bool _authed = false;
+    bool _ranOnce = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || _checkedAuthOnce) return;
-        _checkedAuthOnce = true;
+        if (!firstRender || _ranOnce) return;
+        _ranOnce = true;
 
-        try
+        // Cho phép /login hiển thị (không tự redirect vòng)
+        var path = "/" + Nav.ToBaseRelativePath(Nav.Uri).Trim('/');
+        if (path.StartsWith("/login", StringComparison.OrdinalIgnoreCase))
         {
-            // Nếu CheckAuthenState() có JS interop (localStorage), gọi ở đây là đúng chỗ
-            if (!await AuthService.CheckAuthenState())
-                Nav.NavigateTo("/login", forceLoad: true);
+            _checking = false;
+            _authed = true; // cho render login nếu bạn vẫn dùng MainLayout
+            StateHasChanged();
+            return;
         }
-        catch (Exception ex)
+
+        _authed = await AuthService.CheckAuthenState(); // có JS localStorage thì gọi ở đây đúng
+        _checking = false;
+
+        if (!_authed)
         {
-            // Đừng nuốt exception, ít nhất log để biết nguyên nhân thật
-            Console.WriteLine(ex.Message, "CheckAuthenState failed on login page.");
+            var returnUrl = Uri.EscapeDataString(Nav.ToBaseRelativePath(Nav.Uri));
+            Nav.NavigateTo($"/login?returnUrl={returnUrl}", replace: true); // KHÔNG forceLoad
+            return;
         }
+
+        StateHasChanged();
     }
 }
 
