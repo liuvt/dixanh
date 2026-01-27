@@ -1,6 +1,7 @@
 ﻿using dixanh.Libraries.Models;
 using dixanh.Services.Interfaces;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace dixanh.Components.Pages.Bases;
 public class VehicleBase : ComponentBase
@@ -15,7 +16,6 @@ public class VehicleBase : ComponentBase
     protected string? textResult;
 
     // Cờ để đảm bảo chỉ check auth khi đã interactive (an toàn cho JS interop)
-
     protected bool _loading;
     protected int _page = 1;
     protected int _pageSize = 20;
@@ -36,11 +36,16 @@ public class VehicleBase : ComponentBase
     protected string _drawerMode = "view"; // create|view|edit|history
     protected string? _selectedVehicleId;
     protected string _currentUserName = "system";
-
+    [Inject]
+    protected AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
+    protected string? _currentNameOfUser;
     protected override async Task OnInitializedAsync()
     {
         _statuses = await vehicleStatusService.GetAllAsync(onlyActive: true);
         await LoadAsync(page: 1);
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentNameOfUser = authState.User?.Identity?.Name;
     }
 
     protected async Task LoadAsync(int page)
@@ -122,32 +127,4 @@ public class VehicleBase : ComponentBase
     {
         await LoadAsync(_page);
     }
-
-    /*
-    
-    [Inject]
-    protected IAuthService AuthService { get; set; } = default!;
-    [Inject] 
-    protected NavigationManager Nav { get; set; } = default!;
-    [Inject]
-    protected ILogger<VehicleBase> Logger { get; set; } = default!;
-    protected bool _checkedAuthOnce;
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender || _checkedAuthOnce) return;
-        _checkedAuthOnce = true;
-
-        try
-        {
-            // Nếu CheckAuthenState() có JS interop (localStorage), gọi ở đây là đúng chỗ
-            if (!await AuthService.CheckAuthenState())
-                Nav.NavigateTo("/login", forceLoad: true);
-        }
-        catch (Exception ex)
-        {
-            // Đừng nuốt exception, ít nhất log để biết nguyên nhân thật
-            Logger.LogError(ex, "CheckAuthenState failed on login page.");
-        }
-    }
-    */
 }

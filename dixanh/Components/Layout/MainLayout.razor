@@ -1,100 +1,63 @@
 ﻿@inherits LayoutComponentBase
-@inject IAuthService AuthService
 @inject NavigationManager Nav
+<AuthorizeView>
+    <Authorized>
+        <div hidden></div>
+        <div class="isolate">
+            <div class="max-w-screen overflow-x-hidden">
+                <div class="fixed inset-x-0 top-0 z-10">
+                    <NavMenu />
+                </div>
+                <!-- Vehicle List Page (Tailwind) -->
+                <div class="min-h-screen bg-slate-50 pt-16">
 
-@if (_checking)
-{
-    <div class="min-h-screen flex items-center justify-center bg-slate-50">
-        Đang kiểm tra đăng nhập...
-    </div>
-}
-else if (_authed)
-{
-<div hidden></div>
-<div class="isolate">
-    <div class="max-w-screen overflow-x-hidden">
-        <div class="fixed inset-x-0 top-0 z-10">
-            <NavMenu />
-        </div>
-        <!-- Vehicle List Page (Tailwind) -->
-        <div class="min-h-screen bg-slate-50 pt-16">
+                    <div class="flex">
+                        <!-- Sidebar -->
+                        <aside class="min-h-[calc(100vh-56px)] w-60 bg-slate-900 text-slate-100">
+                            <div class="p-3">
+                                <div class="px-3 py-2 text-xs text-slate-400 uppercase">Management</div>
 
-            <div class="flex">
-                <!-- Sidebar -->
-                <aside class="min-h-[calc(100vh-56px)] w-60 bg-slate-900 text-slate-100">
-                    <div class="p-3">
-                        <div class="px-3 py-2 text-xs text-slate-400 uppercase">Management</div>
+                                <NavLink href="/"
+                                         Match="NavLinkMatch.All"
+                                         class="group flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white/5"
+                                         ActiveClass="border border-emerald-500/20 bg-emerald-500/15 text-emerald-200">
+                                    <span class="h-2 w-2 rounded-full bg-emerald-400 opacity-0 transition-opacity group-aria-[current=page]:opacity-100"></span>
+                                    Trang chính
+                                </NavLink>
 
-                        <NavLink href="/dashboard"
-                                 class="group flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white/5"
-                                 ActiveClass="border border-emerald-500/20 bg-emerald-500/15 text-emerald-200">
-                            <span class="h-2 w-2 rounded-full bg-emerald-400 opacity-0 transition-opacity group-aria-[current=page]:opacity-100"></span>
-                            Trang chính
-                        </NavLink>
+                                <NavLink href="/vehicles"
+                                         class="group mt-1 flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white/5"
+                                         ActiveClass="border border-emerald-500/20 bg-emerald-500/15 text-emerald-200">
+                                    <span class="h-2 w-2 rounded-full bg-emerald-400 opacity-0 transition-opacity group-aria-[current=page]:opacity-100"></span>
+                                    Quản lý xe
+                                </NavLink>
 
-                        <NavLink href="/vehicles"
-                                 class="group mt-1 flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white/5"
-                                 ActiveClass="border border-emerald-500/20 bg-emerald-500/15 text-emerald-200">
-                            <span class="h-2 w-2 rounded-full bg-emerald-400 opacity-0 transition-opacity group-aria-[current=page]:opacity-100"></span>
-                            Quản lý xe
-                        </NavLink>
+                                <NavLink href="/CooperationProfile"
+                                         class="group mt-1 flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white/5"
+                                         ActiveClass="border border-emerald-500/20 bg-emerald-500/15 text-emerald-200">
+                                    <span class="h-2 w-2 rounded-full bg-emerald-400 opacity-0 transition-opacity group-aria-[current=page]:opacity-100"></span>
+                                    Quản lý hợp đồng
+                                </NavLink>
 
-                        <NavLink href="/CooperationProfile"
-                                 class="group mt-1 flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white/5"
-                                 ActiveClass="border border-emerald-500/20 bg-emerald-500/15 text-emerald-200">
-                            <span class="h-2 w-2 rounded-full bg-emerald-400 opacity-0 transition-opacity group-aria-[current=page]:opacity-100"></span>
-                            Quản lý hợp đồng
-                        </NavLink>
-
-                        <NavLink href="/contracts"
-                                 class="group mt-1 flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white/5"
-                                 ActiveClass="border border-emerald-500/20 bg-emerald-500/15 text-emerald-200">
-                            <span class="h-2 w-2 rounded-full bg-emerald-400 opacity-0 transition-opacity group-aria-[current=page]:opacity-100"></span>
-                            Hợp đồng
-                        </NavLink>
+                                <NavLink href="/contracts"
+                                         class="group mt-1 flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white/5"
+                                         ActiveClass="border border-emerald-500/20 bg-emerald-500/15 text-emerald-200">
+                                    <span class="h-2 w-2 rounded-full bg-emerald-400 opacity-0 transition-opacity group-aria-[current=page]:opacity-100"></span>
+                                    Hợp đồng
+                                </NavLink>
+                            </div>
+                        </aside>
+                        <!-- Main Content -->
+                        <main class="mt-2 ml-2 flex-1 overflow-y-auto">
+                            @Body
+                        </main>
                     </div>
-                </aside>
-                <!-- Main Content -->
-                <main class="mt-2 ml-2 flex-1 overflow-y-auto">
-                    @Body
-                </main>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-}
+    </Authorized>
 
-@code {
-    bool _checking = true;
-    bool _authed = false;
-    bool _ranOnce = false;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender || _ranOnce) return;
-        _ranOnce = true;
-
-        // Cho phép /login hiển thị (không tự redirect vòng)
-        var path = "/" + Nav.ToBaseRelativePath(Nav.Uri).Trim('/');
-        if (path.StartsWith("/login", StringComparison.OrdinalIgnoreCase))
-        {
-            _checking = false;
-            _authed = true; // cho render login nếu bạn vẫn dùng MainLayout
-            StateHasChanged();
-            return;
-        }
-
-        _authed = await AuthService.CheckAuthenState(); // có JS localStorage thì gọi ở đây đúng
-        _checking = false;
-
-        if (!_authed)
-        {
-            var returnUrl = Uri.EscapeDataString(Nav.ToBaseRelativePath(Nav.Uri));
-            Nav.NavigateTo($"/login?returnUrl={returnUrl}", replace: true); // KHÔNG forceLoad
-            return;
-        }
-
-        StateHasChanged();
-    }
-}
-
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>

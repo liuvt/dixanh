@@ -52,12 +52,12 @@ public class AuthController : ControllerBase
     // Sử dụng với mục đích đăng nhập web nội bộ
     [HttpPost("login-cookie")]
     [AllowAnonymous]
-    public async Task<IActionResult> LoginCookie([FromForm] AppLoginDTO dto, [FromQuery] string? returnUrl = "/dashboard")
+    public async Task<IActionResult> LoginCookie([FromForm] AppLoginDTO dto, [FromQuery] string? returnUrl = "/")
     {
         try
         {
             await _auth.LoginCookie(dto);
-            return Redirect(string.IsNullOrWhiteSpace(returnUrl) ? "/dashboard" : returnUrl);
+            return Redirect(string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl);
         }
         catch (Exception ex)
         {
@@ -68,10 +68,15 @@ public class AuthController : ControllerBase
 
     [HttpPost("logout-cookie")]
     [Authorize(AuthenticationSchemes = "Identity.Application")]
-    public async Task<IActionResult> LogoutCookie()
+    public async Task<IActionResult> LogoutCookie([FromQuery] string? returnUrl = "/login")
     {
         await _auth.LogoutCookie();
-        return Ok(true); // nếu logout bằng form thì bạn có thể Redirect("/login")
+
+        // chống open-redirect
+        if (string.IsNullOrWhiteSpace(returnUrl) || !Url.IsLocalUrl(returnUrl))
+            returnUrl = "/login";
+
+        return LocalRedirect(returnUrl);
     }
 
     // ===================== JWT =====================

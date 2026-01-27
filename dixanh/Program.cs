@@ -130,11 +130,12 @@ builder.Services.AddScoped<IVehicleStatusService, VehicleStatusService>();
 #endregion
 
 #region Font-end Register services
-// Blazor (client-side or server-side UI): [Authorize], [AuthorizeView]
-builder.Services.AddScoped<IAuthService, AuthService>();
+// JWT (API/Postman/mobile)
+builder.Services.AddScoped<IAuthJwtService, AuthJwtService>();
+builder.Services.AddScoped<IAuthCookieService, AuthCookieService>();
 // Sử dụng Cookie Identity không cần custom AuthenticationStateProvider
 builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<AppUser>>();
+builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
 //For SQL Server
 #endregion

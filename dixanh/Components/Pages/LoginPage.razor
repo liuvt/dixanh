@@ -1,13 +1,15 @@
-﻿@page "/"
-@page "/login"
-@inherits AppLoginBase
-@rendermode @(new InteractiveServerRenderMode(prerender: false))
+﻿@page "/login"
 @layout MainEmptyLayout
+@inherits AppLoginBase
 
 <PageTitle>Đăng nhập tài khoản - Đi Xanh</PageTitle>
 
 <div class="flex min-h-screen items-center justify-center bg-slate-50">
     <AuthorizeView Context="authContext">
+        <Authorized>
+            <RedirectToDashboard />
+        </Authorized>
+
         <NotAuthorized>
             <div class="w-full max-w-md">
                 <div class="mb-6 text-center">
@@ -25,12 +27,14 @@
                             <!-- Email -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700">Email</label>
-                                <p class="mt-1 text-xs text-slate-500">Hỗ trợ: Gmail, Yahoo, Hotmail, Outlook,..</p>
+                                <p class="mt-1 text-xs text-slate-500">Hỗ trợ: Gmail, Outlook,..</p>
                                 <input class="@InputClass(_processing)"
+                                       name="Email"
                                        type="email"
                                        autocomplete="email"
                                        placeholder="owner@dixanh.com"
-                                       @bind="models.Email"
+                                       @bind-value="models.Email"
+                                       @bind-value:event="oninput"
                                        disabled="@_processing" />
                             </div>
 
@@ -41,10 +45,12 @@
 
                                 <div class="relative mt-2">
                                     <input class="@($"{InputClass(_processing)} pr-12")"
+                                           name="Password"
                                            type="@(_showPassword ? "text" : "password")"
                                            autocomplete="current-password"
                                            placeholder="••••••••"
-                                           @bind="models.Password"
+                                           @bind-value="models.Password"
+                                           @bind-value:event="oninput"
                                            disabled="@_processing" />
 
                                     <button type="button"
@@ -54,7 +60,6 @@
                                             aria-label="Hiện/ẩn mật khẩu">
                                         @if (_showPassword)
                                         {
-                                            <!-- eye-off -->
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M10.477 10.48a3 3 0 004.243 4.243" />
@@ -65,7 +70,6 @@
                                         }
                                         else
                                         {
-                                            <!-- eye -->
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -77,7 +81,6 @@
 
                             <!-- Actions -->
                             <div class="flex items-center justify-between pt-2">
-                                <!-- Reset -->
                                 <button type="button"
                                         class="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 hover:bg-rose-100 focus:ring-4 focus:ring-rose-100 focus:outline-none disabled:opacity-50"
                                         disabled="@_processing"
@@ -85,10 +88,9 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-3-6.708M21 3v6h-6" />
                                     </svg>
-                                    <span class="ml-2 text-sm font-semibold">Làm mới</span>
+                                    <span class="ml-2 text-sm font-semibold">Reset</span>
                                 </button>
 
-                                <!-- Submit -->
                                 <button type="submit"
                                         class="@SubmitClass(_processing)"
                                         disabled="@_processing">
@@ -112,23 +114,19 @@
                                 </button>
                             </div>
 
-                            <!-- Register link -->
                             <div class="pt-2">
-                                <a href="/register"
+                                <a href="https://zalo.me/84583479173"
+                                   target="_blank" rel="noopener"
                                    class="text-sm font-medium text-emerald-700 hover:text-emerald-800">
-                                    Đăng ký ngay! nếu bạn chưa có tài khoản
+                                    Chưa có tài khoản liên hệ với quản trị để đăng ký TVT Team!
                                 </a>
                             </div>
 
-                            <!-- Errors -->
                             <div class="space-y-2">
-                                <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                                    <ValidationSummary />
-                                </div>
-
                                 @if (!string.IsNullOrWhiteSpace(textResult))
                                 {
                                     <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                                        <ValidationSummary />
                                         @textResult
                                     </div>
                                 }
@@ -140,24 +138,12 @@
         </NotAuthorized>
     </AuthorizeView>
 </div>
-<!-- Ds ảnh brand swiper-->
-<SwiperBrand />
 
-@code {
-    private bool _showPassword;
-
-    private void TogglePassword()
-    {
-        _showPassword = !_showPassword;
-    }
-
-    private static string InputClass(bool disabled) =>
-        "mt-2 block w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none " +
-        "focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 " +
-        (disabled ? "opacity-60 cursor-not-allowed" : "");
-
-    private static string SubmitClass(bool disabled) =>
-        "inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-white font-semibold " +
-        "shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-200 " +
-        (disabled ? "opacity-70 cursor-not-allowed" : "");
-}
+<!-- Native form: CÁI NÀY MỚI LÀ CÁI THẬT SỰ SET COOKIE -->
+<form @ref="_nativeForm"
+      method="post"
+      action="/api/auth/login-cookie?returnUrl=%2F"
+      style="display:none">
+    <input type="hidden" name="Email" value="@models.Email" />
+    <input type="hidden" name="Password" value="@models.Password" />
+</form>
