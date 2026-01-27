@@ -39,29 +39,58 @@ public class AuthServer : IAuthServer
         return result;
     }
 
+    #region Authentication với cả Cookie và JWT
     /* Đăng nhập */
-    public async Task<AppUser> Login(AppLoginDTO login)
+    // Cookie sử dụng cho web nội bộ
+    public async Task<AppUser> LoginCookie(AppLoginDTO login)
     {
-        try
-        {
-            //Kiểm tra email
-            var user = await userManager.FindByEmailAsync(login.Email);
-            if (user == null)
-                throw new Exception("Wrong Email or Password");
+        var user = await userManager.FindByEmailAsync(login.Email);
+        if (user == null) throw new Exception("Wrong Email or Password");
 
-            //Đăng nhập với Email và Password
-            var result = await loginManager.PasswordSignInAsync(
-                                                login.Email, login.Password, false, false);
-            if (!result.Succeeded)
-                throw new Exception("Wrong Email or Password");
+        var result = await loginManager.PasswordSignInAsync(
+            user.UserName!, login.Password,
+            isPersistent: true,
+            lockoutOnFailure: true); // nội bộ thì bật lockout cũng được
 
-            return user;
-        }
-        catch (Exception ex)
-        {
-            throw new Exception(ex.Message);
-        }
+        if (result.IsLockedOut) throw new Exception("Tài khoản bị khóa tạm thời.");
+        if (result.RequiresTwoFactor) throw new Exception("Yêu cầu xác thực 2 lớp.");
+        if (!result.Succeeded) throw new Exception("Wrong Email or Password");
+
+        return user;
     }
+    // Bổ sung LogoutCookie() trong AuthServer (để controller gọi thống nhất)
+    public async Task LogoutCookie()
+    {
+        await loginManager.SignOutAsync();
+    }
+
+    //==========================================================
+    // Jwt sử dụng cho SPA hoặc Mobile
+    public async Task<string> LoginJwt(AppLoginDTO login)
+    {
+        var user = await userManager.FindByEmailAsync(login.Email);
+        if (user == null) throw new Exception("Wrong Email or Password");
+
+        var result = await loginManager.CheckPasswordSignInAsync(user, login.Password, lockoutOnFailure: true);
+        if (result.IsLockedOut) throw new Exception("Tài khoản bị khóa tạm thời.");
+        if (!result.Succeeded) throw new Exception("Wrong Email or Password");
+
+        var role = await GetRoleName(user);
+
+        var userClaim = new InfomationUserSaveInToken
+        {
+            id = user.Id ?? "",
+            email = user.Email ?? "",
+            name = $"{user.FirstName} {user.LastName}".Trim(),
+            giveName = $"{user.FirstName} {user.LastName}".Trim(),
+            userName = user.UserName ?? "",
+            userRole = role,
+            userGuiId = Guid.NewGuid().ToString()
+        };
+
+        return await CreateToken(userClaim);
+    }
+    #endregion
 
     /* Đăng ký */
     public async Task<IdentityResult> Register(AppRegisterDTO register)
@@ -78,7 +107,7 @@ public class AuthServer : IAuthServer
             LastName = register.LastName,
             UserName = register.Email,
             Gender = register.Gender,
-            PublishedAt = DateTime.Now
+            PublishedAt = DateTime.UtcNow
         };
 
         //Create password
@@ -134,15 +163,15 @@ public class AuthServer : IAuthServer
     }
 
     /* Tạo token*/
-    public async Task<string> CreateToken(InfomationUserSaveInToken user)
+    private async Task<string> CreateToken(InfomationUserSaveInToken user)
     {
         try
         {
             //Thông tin User đưa vào Token
             var listClaims = new List<Claim>
                         {
-                            new Claim("id", user.id),
-                            new Claim("username", user.userName),
+                            new Claim(ClaimTypes.NameIdentifier, user.id),
+                            new Claim(ClaimTypes.Name, user.userName),
                             new Claim("email", user.email),
                             new Claim("name", user.name),
                             new Claim("give_name", user.giveName),
@@ -161,7 +190,7 @@ public class AuthServer : IAuthServer
                 claims: listClaims, //Thông tin User
                 issuer: configuration["JWT:ValidIssuer"], //In file appsetting.json
                 audience: configuration["JWT:ValidAudience"], //In file appsetting.json
-                expires: DateTime.Now.AddDays(7), //Thời gian tồn tại Token
+                expires: DateTime.UtcNow.AddDays(30), //Thời gian tồn tại Token
                 signingCredentials: signCredentials //Chữ ký
             );
 
@@ -174,7 +203,7 @@ public class AuthServer : IAuthServer
     }
 
     /* Lấy thông tin quyền truy cập */
-    public async Task<string> GetRoleName(AppUser user)
+    private async Task<string> GetRoleName(AppUser user)
     {
         try
         {

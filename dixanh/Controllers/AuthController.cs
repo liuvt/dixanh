@@ -2,8 +2,8 @@
 using dixanh.Libraries.Models;
 using dixanh.Servers.Contracts;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace dixanh.Controllers;
 
@@ -11,142 +11,155 @@ namespace dixanh.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    //Get API Server
-    private readonly IAuthServer context;
-    private readonly ILogger<AuthController> logger;
-    public AuthController(IAuthServer _context, ILogger<AuthController> _logger)
+    private readonly IAuthServer _auth;
+    private readonly UserManager<AppUser> _users;
+    private readonly ILogger<AuthController> _logger;
+    /*
+        // 1) Cookie-only (web nội bộ)
+        [Authorize(AuthenticationSchemes = "Identity.Application")]
+
+        // 2) JWT-only (Postman/Mobile)
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+
+        // 3) Cookie OR JWT (dùng policy)
+        [Authorize(Policy = "CookieOrJwt")]
+     */
+    public AuthController(IAuthServer auth, UserManager<AppUser> users, ILogger<AuthController> logger)
     {
-        this.context = _context;
-        this.logger = _logger;
+        _auth = auth;
+        _users = users;
+        _logger = logger;
     }
 
     [HttpPost("Register")]
-    public async Task<IActionResult> Register(AppRegisterDTO register)
+    [AllowAnonymous]
+    public async Task<IActionResult> Register([FromBody] AppRegisterDTO register)
     {
         try
         {
-            var result = await this.context.Register(register);
-            if (!result.Succeeded) return Unauthorized();
-
-            return Ok(result.Succeeded);
+            var result = await _auth.Register(register);
+            if (!result.Succeeded) return BadRequest(result.Errors);
+            return Ok(true);
         }
         catch (Exception ex)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            return StatusCode(500, "Error: " + ex.Message);
         }
     }
 
-    [HttpPost("Login")]
-    public async Task<ActionResult<string>> Login(AppLoginDTO appLogin)
+    // ===================== COOKIE =====================
+    // Gọi bằng FORM từ browser: application/x-www-form-urlencoded
+    // Sử dụng với mục đích đăng nhập web nội bộ
+    [HttpPost("login-cookie")]
+    [AllowAnonymous]
+    public async Task<IActionResult> LoginCookie([FromForm] AppLoginDTO dto, [FromQuery] string? returnUrl = "/dashboard")
     {
         try
         {
-            //Login
-            var appUser = await this.context.Login(appLogin);
-            if (appUser == null)
-                throw new Exception("Wrong Email or Password");
+            await _auth.LoginCookie(dto);
+            return Redirect(string.IsNullOrWhiteSpace(returnUrl) ? "/dashboard" : returnUrl);
+        }
+        catch (Exception ex)
+        {
+            // form login thì redirect kèm lỗi cho dễ hiển thị
+            return Redirect($"/login?error=1&msg={Uri.EscapeDataString(ex.Message)}");
+        }
+    }
 
-            //Role
-            var role = await this.context.GetRoleName(appUser);
+    [HttpPost("logout-cookie")]
+    [Authorize(AuthenticationSchemes = "Identity.Application")]
+    public async Task<IActionResult> LogoutCookie()
+    {
+        await _auth.LogoutCookie();
+        return Ok(true); // nếu logout bằng form thì bạn có thể Redirect("/login")
+    }
 
-            //Create token
-            var userClaim = new InfomationUserSaveInToken()
-            {
-                id = appUser.Id ?? string.Empty,
-                email = appUser.Email ?? string.Empty,
-                name = $"{appUser.FirstName} {appUser.LastName}" ?? string.Empty,
-                giveName = $"{appUser.FirstName} {appUser.LastName}" ?? string.Empty,
-                userName = appUser.UserName ?? string.Empty,
-                userRole = role,
-                userGuiId = Guid.NewGuid().ToString()
-            };
-
-            var token = await this.context.CreateToken(userClaim);
-
+    // ===================== JWT =====================
+    // Gọi bằng JSON từ SPA/Mobile: application/json
+    // Sử dụng với mục đích API token truy cập bằng JWT ra bên ngoài
+    [HttpPost("token")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Token([FromBody] AppLoginDTO dto)
+    {
+        try
+        {
+            var token = await _auth.LoginJwt(dto);
             return Ok(token);
         }
         catch (Exception ex)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                                                                "Error: " + ex.Message);
+            return Unauthorized("Error: " + ex.Message);
         }
     }
 
-    [HttpGet("Me"), Authorize]
+    // ===================== PROFILE (Cookie + JWT) =====================
+    [HttpGet("Me")]
+    [Authorize(Policy = "CookieOrJwt")]
     public async Task<ActionResult<AppUser>> GetMe()
     {
-        try
-        {
-            /*
-                Console.WriteLine("User name: " + User.FindFirstValue(ClaimTypes.NameIdentifier)); //User name
-                Console.WriteLine("Email: " + User.FindFirstValue(email));        //Email
-                Console.WriteLine("Role: " + User.FindFirstValue(ClaimTypes.Role));             //Role
-                Console.WriteLine("User Id: " + User.FindFirstValue("id"));    //User Id
-            */
-            return Ok(await this.context.GetMe(this.User.FindFirstValue("id")
-                                                    ?? throw new Exception("Not found User ID")));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                                                                "Error: " + ex.Message);
-        }
+        var userId = _users.GetUserId(User); // lấy từ ClaimTypes.NameIdentifier
+        if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Not found User ID");
+
+        return Ok(await _auth.GetMe(userId));
     }
 
-    [HttpPatch("Me/Edit"), Authorize]
-    public async Task<IActionResult> EditMe(AppEditDTO models)
+    [HttpPatch("Me/Edit")]
+    [Authorize(Policy = "CookieOrJwt")]
+    public async Task<IActionResult> EditMe([FromBody] AppEditDTO models)
     {
         try
         {
-            var edit = await this.context.EditMe(models, this.User.FindFirstValue("id")
-                                                                ?? throw new Exception("Not found User ID"));
-            if (!edit.Succeeded) return BadRequest();
+            var userId = _users.GetUserId(User);
+            if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Not found User ID");
 
-            return Ok(edit.Succeeded);
+            var edit = await _auth.EditMe(models, userId);
+            if (!edit.Succeeded) return BadRequest(edit.Errors);
+
+            return Ok(true);
         }
         catch (Exception ex)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                                                                "Error: " + ex.Message);
+            return StatusCode(500, "Error: " + ex.Message);
         }
     }
 
-    [HttpPatch("Me/ChangePassword"), Authorize]
-    public async Task<IActionResult> ChangeCurrentPassword(AppChangePasswordDTO changePassword)
+    [HttpPatch("Me/ChangePassword")]
+    [Authorize(Policy = "CookieOrJwt")]
+    public async Task<IActionResult> ChangeCurrentPassword([FromBody] AppChangePasswordDTO changePassword)
     {
         try
         {
-            var userId = this.User.FindFirstValue("id")
-                                        ?? throw new Exception("Not found User ID");
-            var resetpassword = await this.context.ChangeCurrentPassword(userId, changePassword.CurrentPassword, changePassword.Password);
-            if (!resetpassword.Succeeded) return Unauthorized();
+            var userId = _users.GetUserId(User);
+            if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Not found User ID");
 
-            return Ok(resetpassword.Succeeded);
+            var result = await _auth.ChangeCurrentPassword(userId, changePassword.CurrentPassword, changePassword.Password);
+            if (!result.Succeeded) return BadRequest(result.Errors);
+
+            return Ok(true);
         }
         catch (Exception ex)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                                                                "Error: " + ex.Message);
+            return StatusCode(500, "Error: " + ex.Message);
         }
     }
 
-    [HttpDelete("Me"), Authorize]
+    [HttpDelete("Me")]
+    [Authorize(Policy = "CookieOrJwt")]
     public async Task<IActionResult> DeleteMe()
     {
         try
         {
-            var userId = this.User.FindFirstValue("id")
-                                            ?? throw new Exception("Không tìm thấy User ID");
-            var delete = await this.context.DeleteMe(userId);
-            if (!delete.Succeeded) return Unauthorized();
+            var userId = _users.GetUserId(User);
+            if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Not found User ID");
 
-            return Ok();
+            var delete = await _auth.DeleteMe(userId);
+            if (!delete.Succeeded) return BadRequest(delete.Errors);
+
+            return Ok(true);
         }
         catch (Exception ex)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                                                            "Error: " + ex.Message);
+            return StatusCode(500, "Error: " + ex.Message);
         }
     }
-
 }

@@ -31,10 +31,7 @@ sudo systemctl status dixanh --no-pager
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
-builder.Services
-    .AddServerSideBlazor()
+    .AddInteractiveServerComponents()
     .AddCircuitOptions(o => o.DetailedErrors = true);
 
 // API: Add controllers
@@ -66,12 +63,13 @@ builder.Services.AddScoped(
     });
 
 // API: Add Jwt, Gooogle Authentication
+// Sử dụng cả Cookie Identity (web nội bộ) và JWT Bearer (API)
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    // Cookie Identity làm mặc định cho UI nội bộ
+    options.DefaultScheme = IdentityConstants.ApplicationScheme;
 })
-.AddJwtBearer(jwtBearerOptions =>
+.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, jwtBearerOptions =>
 {
     jwtBearerOptions.RequireHttpsMetadata = false;
     jwtBearerOptions.SaveToken = true;
@@ -109,7 +107,19 @@ builder.Services.AddSwaggerGen(
 
 #region Back-end Register serivces
 //ASP.NET Core server – Web API, MVC controller : [Authorize]
-builder.Services.AddAuthorization();
+// Sử dụng cả Cookie Identity (web nội bộ) và JWT Bearer (API)
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("CookieOrJwt", policy =>
+    {
+        policy.AddAuthenticationSchemes(
+            IdentityConstants.ApplicationScheme,
+            JwtBearerDefaults.AuthenticationScheme);
+
+        policy.RequireAuthenticatedUser();
+    });
+});
+
 //For SQL Server
 builder.Services.AddScoped<IAuthServer, AuthServer>();
 
@@ -121,13 +131,10 @@ builder.Services.AddScoped<IVehicleStatusService, VehicleStatusService>();
 
 #region Font-end Register services
 // Blazor (client-side or server-side UI): [Authorize], [AuthorizeView]
-builder.Services.AddAuthorizationCore();
-
-// Authentication
-builder.Services.AddScoped<AuthenticationStateProvider, AuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+// Sử dụng Cookie Identity không cần custom AuthenticationStateProvider
 builder.Services.AddCascadingAuthenticationState();
-// UI: Register Client Services
+builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<AppUser>>();
 
 //For SQL Server
 #endregion
@@ -163,6 +170,23 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
     {
         if (ctx.CookieOptions.SameSite == SameSiteMode.None)
             ctx.CookieOptions.SameSite = SameSiteMode.Unspecified;
+    };
+});
+
+// Cookie không redirect 302 cho /api/* (trả 401)
+builder.Services.ConfigureApplicationCookie(opt =>
+{
+    opt.LoginPath = "/login";
+
+    opt.Events.OnRedirectToLogin = ctx =>
+    {
+        if (ctx.Request.Path.StartsWithSegments("/api"))
+        {
+            ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return Task.CompletedTask;
+        }
+        ctx.Response.Redirect(ctx.RedirectUri);
+        return Task.CompletedTask;
     };
 });
 
