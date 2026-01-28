@@ -23,12 +23,15 @@ public sealed class VehicleService : IVehicleService
 
     // Tìm kiếm xe với phân trang và lọc
     // Trả về tuple (danh sách xe, tổng số bản ghi)
-    // Các filter đều là tuỳ chọn (nullable)
+    // plate: lọc theo biển số (chứa chuỗi)
+    // statusId: lọc theo trạng thái
+    // fromUtc, toUtc: lọc theo khoảng ngày tạo
+    // Trả về danh sách xe kèm thông tin trạng thái
     // Sắp xếp theo CreatedAt DESC
     // page: trang hiện tại (bắt đầu từ 1)
     // pageSize: số bản ghi mỗi trang
-    // Sử dụng index phù hợp để tối ưu truy vấn
-    // Ví dụ: index trên LicensePlate, StatusId, CreatedAt
+    // Các filter nên được áp dụng theo thứ tự để tận dụng index
+    // Ví dụ gọi: SearchAsync("68G", 1, null, null, 1, 20)
     public async Task<(List<Vehicle> Items, int Total)> SearchAsync(
         string? plate,
         int? statusId,

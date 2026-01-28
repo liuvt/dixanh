@@ -62,8 +62,3 @@ window.IframeOnLoad = async () => {
   console.log("indexVideo: " + indexVideo );
   return indexVideo;
 }
-
-//Submit form từ JS
-window.dixanhSubmitForm = (form) => {
-    if (form) form.submit();
-};

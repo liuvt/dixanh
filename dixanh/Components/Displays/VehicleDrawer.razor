@@ -6,8 +6,9 @@
 @if (Open)
 {
     <div class="fixed inset-0 z-40">
-        <!-- overlay -->
-        <div class="absolute inset-0 bg-black/30" @onclick="OnClose"></div>
+        <!-- overlay
+        <div class="absolute inset-0 bg-black/30" @onclick="OnClose"></div>-->
+        <div class="absolute inset-0 bg-black/30"></div>
 
         <!-- panel -->
         <div class="absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-xl">
@@ -16,7 +17,7 @@
                     <div class="text-sm text-slate-500">Vehicle</div>
                     <div class="text-lg font-semibold text-slate-900">@Title</div>
                 </div>
-                <button class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50" @onclick="OnClose">Close</button>
+                <button class="@UiBtnOutline" @onclick="OnClose">Thoát</button>
             </div>
 
             <!-- Tabs -->
@@ -44,61 +45,61 @@
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div class="md:col-span-2">
                                     <label class="text-sm font-medium text-slate-700">VehicleId</label>
-                                    <input class="mt-1 w-full rounded-lg border-slate-300 bg-slate-50"
+                                    <input class="@UiInput"
                                            value="@_model.VehicleId" disabled />
                                 </div>
 
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Biển số</label>
-                                    <InputText class="mt-1 w-full rounded-lg border-slate-300"
+                                    <InputText class="@UiInput"
                                                @bind-Value="_model.LicensePlate" disabled="@IsReadOnly" />
                                 </div>
 
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Số hiệu xe</label>
-                                    <InputText class="mt-1 w-full rounded-lg border-slate-300"
+                                    <InputText class="@UiInput"
                                                @bind-Value="_model.VehicleCode" disabled="@IsReadOnly" />
                                 </div>
 
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Thương hiệu</label>
-                                    <InputText class="mt-1 w-full rounded-lg border-slate-300"
+                                    <InputText class="@UiInput"
                                                @bind-Value="_model.Brand" disabled="@IsReadOnly" />
                                 </div>
 
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Số chỗ</label>
-                                    <InputNumber class="mt-1 w-full rounded-lg border-slate-300"
+                                    <InputNumber class="@UiSelect"
                                                  @bind-Value="_model.SeatCount" disabled="@IsReadOnly" />
                                 </div>
 
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Màu</label>
-                                    <InputText class="mt-1 w-full rounded-lg border-slate-300"
+                                    <InputText class="@UiInput"
                                                @bind-Value="_model.Color" disabled="@IsReadOnly" />
                                 </div>
 
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Ngày SX</label>
-                                    <InputDate class="mt-1 w-full rounded-lg border-slate-300"
+                                    <InputDate class="@UiInput"
                                                @bind-Value="_model.ManufactureDate" disabled="@IsReadOnly" />
                                 </div>
 
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Loại xe</label>
-                                    <InputText class="mt-1 w-full rounded-lg border-slate-300"
+                                    <InputText class="@UiInput"
                                                @bind-Value="_model.VehicleType" disabled="@IsReadOnly" />
                                 </div>
 
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Số khung</label>
-                                    <InputText class="mt-1 w-full rounded-lg border-slate-300"
+                                    <InputText class="@UiInput"
                                                @bind-Value="_model.ChassisNumber" disabled="@IsReadOnly" />
                                 </div>
 
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Số máy</label>
-                                    <InputText class="mt-1 w-full rounded-lg border-slate-300"
+                                    <InputText class="@UiInput"
                                                @bind-Value="_model.EngineNumber" disabled="@IsReadOnly" />
                                 </div>
                             </div>
@@ -107,9 +108,9 @@
                                 @if (!IsReadOnly)
                                 {
                                     <button type="submit"
-                                            class="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700"
+                                            class="@UiBtnPrimary"
                                             disabled="@_saving">
-                                        Save
+                                        Lưu lại
                                     </button>
                                 }
                             </div>
@@ -127,8 +128,9 @@
                             <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Chuyển sang</label>
-                                    <select class="mt-1 w-full rounded-lg border-slate-300"
+                                    <select class="@UiSelect"
                                             @bind="_toStatusId" disabled="@(_model.VehicleId == string.Empty)">
+                                        <option value="">All</option>
                                         @foreach (var s in _statuses)
                                         {
                                             <option value="@s.StatusId">@s.Name</option>
@@ -138,26 +140,26 @@
 
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Ghi chú</label>
-                                    <input class="mt-1 w-full rounded-lg border-slate-300"
+                                    <input class="@UiInput"
                                            placeholder="Lý do đổi trạng thái..."
                                            @bind="_statusNote" />
                                 </div>
                             </div>
 
                             <div class="mt-4 flex flex-wrap justify-end gap-2">
-                                <button class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50"
+                                <button class="@UiBtnOutline"
                                         @onclick="SoftDeleteAsync"
                                         disabled="@_saving">
                                     Ngừng hoạt động
                                 </button>
 
-                                <button class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50"
+                                <button class="@UiBtnOutline"
                                         @onclick="RestoreAsync"
                                         disabled="@_saving">
                                     Khôi phục
                                 </button>
 
-                                <button class="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700"
+                                <button class="@UiBtnPrimary"
                                         @onclick="ChangeStatusAsync"
                                         disabled="@_saving">
                                     Áp dụng
@@ -342,4 +344,17 @@
 
     private Task RestoreAsync()
         => vehicleService.RestoreAsync(_model.VehicleId, CurrentUserName, "Khôi phục hoạt động");
+
+
+
+    //Thiết kế UI Tailwind CSS
+    private string UiInput => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
+    private string UiSelect => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
+
+    private string UiBtnBase => "inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-emerald-500/20";
+    private string UiBtnOutline => $"{UiBtnBase} min-w-[120px] border border-slate-300 bg-white text-slate-700 hover:bg-slate-50";
+    private string UiBtnPrimary => $"{UiBtnBase} min-w-[120px] border border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700";
+
+    private string UiBtnSm => "inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50";
+
 }

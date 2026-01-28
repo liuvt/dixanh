@@ -36,9 +36,9 @@
                                         <input type="number" class="w-24 rounded-lg border-slate-300" @bind="s.SortOrder" />
                                     </td>
                                     <td class="px-4 py-3">
-                                        <button class="rounded-lg bg-emerald-600 px-3 py-1.5 text-white hover:bg-emerald-700"
+                                        <button class="@UiBtnPrimary"
                                                 @onclick="() => SaveAsync(s)">
-                                            Save
+                                            Lưu
                                         </button>
                                     </td>
                                 </tr>
@@ -67,4 +67,16 @@
         await vehicleStatusService.UpdateAsync(s.StatusId, s.Name, s.IsActive, s.SortOrder);
         _items = await vehicleStatusService.GetAllAsync(onlyActive: false);
     }
+
+
+    //Thiết kế UI Tailwind CSS
+    private string UiInput => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
+    private string UiSelect => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
+
+    private string UiBtnBase => "inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-emerald-500/20";
+    private string UiBtnOutline => $"{UiBtnBase} min-w-[120px] border border-slate-300 bg-white text-slate-700 hover:bg-slate-50";
+    private string UiBtnPrimary => $"{UiBtnBase} min-w-[120px] border border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700";
+
+    private string UiBtnSm => "inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50";
+
 }
