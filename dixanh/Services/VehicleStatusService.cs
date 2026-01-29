@@ -7,32 +7,48 @@ namespace dixanh.Services;
 
 public sealed class VehicleStatusService : IVehicleStatusService
 {
-    private readonly dixanhDBContext _db;
-    public VehicleStatusService(dixanhDBContext db) => _db = db;
+    private readonly IDbContextFactory<dixanhDBContext> _dbFactory;
+
+    public VehicleStatusService(IDbContextFactory<dixanhDBContext> dbFactory)
+        => _dbFactory = dbFactory;
 
     // Lấy tất cả trạng thái xe
-    public Task<List<VehicleStatus>> GetAllAsync(bool onlyActive = true)
+    public async Task<List<VehicleStatus>> GetAllAsync(bool onlyActive = true)
     {
-        var q = _db.VehicleStatuses.AsNoTracking();
+        await using var db = await _dbFactory.CreateDbContextAsync();
+
+        var q = db.VehicleStatuses.AsNoTracking();
 
         if (onlyActive)
             q = q.Where(x => x.IsActive);
 
-        return q.OrderBy(x => x.SortOrder)
-                .ThenBy(x => x.Name)
-                .ToListAsync();
+        return await q.OrderBy(x => x.SortOrder)
+                      .ThenBy(x => x.Name)
+                      .ToListAsync();
     }
 
     // Lấy trạng thái xe theo ID
-    public Task<VehicleStatus?> GetAsync(int id) =>
-        _db.VehicleStatuses.AsNoTracking()
-           .FirstOrDefaultAsync(x => x.StatusId == id);
+    public async Task<VehicleStatus?> GetAsync(int id)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
 
-    // (Khuyến nghị) Lấy theo Code: ACTIVE/INACTIVE/MAINTENANCE
-    // Ví dụ: để lấy trạng thái "Hoạt động", gọi GetByCodeAsync("ACTIVE")
-    public Task<VehicleStatus?> GetByCodeAsync(string code) =>
-        _db.VehicleStatuses.AsNoTracking()
-           .FirstOrDefaultAsync(x => x.Code == code);
+        return await db.VehicleStatuses.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.StatusId == id);
+    }
+
+    // Lấy theo Code: ACTIVE/INACTIVE/MAINTENANCE
+    public async Task<VehicleStatus?> GetByCodeAsync(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return null;
+
+        code = code.Trim();
+
+        await using var db = await _dbFactory.CreateDbContextAsync();
+
+        return await db.VehicleStatuses.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Code == code);
+    }
 
     // Cập nhật trạng thái xe
     public async Task UpdateAsync(int id, string name, bool isActive, int sortOrder)
@@ -43,21 +59,26 @@ public sealed class VehicleStatusService : IVehicleStatusService
         if (sortOrder < 0)
             throw new ArgumentOutOfRangeException(nameof(sortOrder), "SortOrder must be >= 0.");
 
-        var cur = await _db.VehicleStatuses.FirstOrDefaultAsync(x => x.StatusId == id);
+        await using var db = await _dbFactory.CreateDbContextAsync();
+
+        var cur = await db.VehicleStatuses.FirstOrDefaultAsync(x => x.StatusId == id);
         if (cur == null) return;
 
         // (Tùy chọn) chặn tắt status đang được dùng
         if (cur.IsActive && !isActive)
         {
-            var used = await _db.Vehicles.AsNoTracking().AnyAsync(v => v.StatusId == id);
+            var used = await db.Vehicles.AsNoTracking()
+                .AnyAsync(v => v.StatusId == id);
+
             if (used)
                 throw new InvalidOperationException("Không thể tắt trạng thái đang được sử dụng bởi xe.");
         }
 
-        cur.Name = name; // Cho phép đổi tên
-        cur.IsActive = isActive; // Cập nhật trạng thái kích hoạt
-        cur.SortOrder = sortOrder; // Cập nhật thứ tự sắp xếp
+        cur.Name = name.Trim();
+        cur.IsActive = isActive;
+        cur.SortOrder = sortOrder;
 
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
     }
+
 }

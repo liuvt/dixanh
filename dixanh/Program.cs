@@ -21,11 +21,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 //dotnet publish -c Release --output ./Publish dixanh.csproj
 /*
-160.191.175.132
-root
-TDCloud#M2#u7U6
-22
-
 sudo systemctl restart dixanh
 sudo systemctl status dixanh --no-pager
 */
@@ -48,12 +43,25 @@ builder.Services.AddIdentity<AppUser, IdentityRole>()
     .AddEntityFrameworkStores<dixanhDBContext>()
     .AddDefaultTokenProviders();
 
-//Add connection string
+#region AddPooledDbContextFactory giúp giảm overhead tạo context (rất hợp cho Blazor Server). Connect to SQL Server
+// AddDbContext vẫn giữ cho Identity
 builder.Services.AddDbContext<dixanhDBContext>(opt =>
 {
-    opt.UseSqlServer(builder.Configuration["ConnectionStrings:Vps"] ?? throw new InvalidOperationException("Can't found [Secret Key] in appsettings.json !"));
+    opt.UseSqlServer(builder.Configuration["ConnectionStrings:Vps"]
+        ?? throw new InvalidOperationException("Can't found ConnectionStrings:Vps"));
     //opt.UseSqlServer(builder.Configuration["ConnectionStrings:Default"] ?? throw new InvalidOperationException("Can't found [Secret Key] in appsettings.json !"));
+
 });
+
+// ✅ Thêm factory để dùng trong Services (tránh concurrency)
+builder.Services.AddPooledDbContextFactory<dixanhDBContext>(opt =>
+{
+    opt.UseSqlServer(builder.Configuration["ConnectionStrings:Vps"]
+        ?? throw new InvalidOperationException("Can't found ConnectionStrings:Vps"));
+    //opt.UseSqlServer(builder.Configuration["ConnectionStrings:Default"] ?? throw new InvalidOperationException("Can't found [Secret Key] in appsettings.json !"));
+
+});
+#endregion
 
 // UI: Get httpClient API default
 builder.Services.AddScoped(
@@ -126,8 +134,8 @@ builder.Services.AddScoped<IAuthServer, AuthServer>();
 
 // Register application services
 builder.Services.AddScoped<IVehicleService, VehicleService>();
-builder.Services.AddScoped<IVehicleStatusHistoryService, VehicleStatusHistoryService>();
 builder.Services.AddScoped<IVehicleStatusService, VehicleStatusService>();
+builder.Services.AddScoped<IVehicleStatusHistoryService, VehicleStatusHistoryService>();
 #endregion
 
 #region Font-end Register services
