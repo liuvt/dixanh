@@ -191,13 +191,13 @@ namespace dixanh.Data.Migrations
                     Brand = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     SeatCount = table.Column<int>(type: "int", nullable: true),
                     Color = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    ManufactureDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ManufactureDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     VehicleType = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     ChassisNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     EngineNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     StatusId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -263,7 +263,7 @@ namespace dixanh.Data.Migrations
                     VehicleId = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false),
                     FromStatusId = table.Column<int>(type: "int", nullable: true),
                     ToStatusId = table.Column<int>(type: "int", nullable: false),
-                    ChangedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ChangedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     ChangedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Note = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true)
                 },
@@ -295,11 +295,11 @@ namespace dixanh.Data.Migrations
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "1", null, "Owner", "OWNER" },
-                    { "2", null, "Administrator", "ADMINISTRATOR" },
-                    { "3", null, "Manager", "MANAGER" },
-                    { "4", null, "Driver", "DRIVER" },
-                    { "5", null, "Employee", "EMPLOYEE" }
+                    { "1", "ROLE-OWNER-STATIC", "Owner", "OWNER" },
+                    { "2", "ROLE-ADMIN-STATIC", "Administrator", "ADMINISTRATOR" },
+                    { "3", "ROLE-MANAGER-STATIC", "Manager", "MANAGER" },
+                    { "4", "ROLE-DRIVER-STATIC", "Driver", "DRIVER" },
+                    { "5", "ROLE-EMPLOYEE-STATIC", "Employee", "EMPLOYEE" }
                 });
 
             migrationBuilder.InsertData(

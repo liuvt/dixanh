@@ -5,7 +5,12 @@ namespace dixanh.Services.Interfaces;
 public interface IVehicleService
 {
     Task<(List<Vehicle> Items, int Total)> SearchAsync(
-        string? plate, int? statusId, DateTime? fromUtc, DateTime? toUtc, int page, int pageSize);
+        string? plate,
+        int? statusId,
+        DateTimeOffset? fromUtc,
+        DateTimeOffset? toUtc,
+        int page,
+        int pageSize);
 
     Task<Vehicle?> GetAsync(string vehicleId);
 

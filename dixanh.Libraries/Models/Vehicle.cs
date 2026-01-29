@@ -19,7 +19,7 @@ public class Vehicle
     public int? SeatCount { get; set; }                             // Số chỗ ngồi (4/5/7...), có thể null nếu chưa cập nhật
     [MaxLength(30)]
     public string Color { get; set; } = string.Empty;               // Màu xe (màu sơn). Ví dụ: Trắng, Đen...
-    public DateTime? ManufactureDate { get; set; }                  // Ngày sản xuất (hoặc năm sản xuất nếu hệ thống bạn lưu dạng date)
+    public DateTimeOffset? ManufactureDate { get; set; }                  // Ngày sản xuất (hoặc năm sản xuất nếu hệ thống bạn lưu dạng date)
     [MaxLength(30)]
     public string VehicleType { get; set; } = string.Empty;         // Loại xe (ví dụ: Taxi điện, Taxi xăng, 7 chỗ...)
     [MaxLength(50)]
@@ -29,8 +29,8 @@ public class Vehicle
 
     [MaxLength(50)]
     public string CreatedBy { get; set; } = string.Empty;           // Người tạo bản ghi (username/mã NV)
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;      // Thời gian tạo (UTC). Nếu muốn giờ VN: DateTime.Now
-    public DateTime? UpdatedAt { get; set; }                        // Thời gian cập nhật gần nhất (UTC), null nếu chưa cập nhật
+    public DateTimeOffset? CreatedAt { get; set; } = DateTime.UtcNow;      // Thời gian tạo (UTC). Nếu muốn giờ VN: DateTime.Now
+    public DateTimeOffset? UpdatedAt { get; set; }                        // Thời gian cập nhật gần nhất (UTC), null nếu chưa cập nhật
     
     public int StatusId { get; set; } // FK đã được cấu hình bằng Fluent API ở dixanhDBContext
     public VehicleStatus? Status { get; set; }     // Nav
@@ -63,7 +63,7 @@ public class VehicleStatusHistory
     public int? FromStatusId { get; set; } // Trạng thái cũ, có thể null nếu là lần đầu thiết lập
     [Required]
     public int ToStatusId { get; set; } // Trạng thái mới
-    public DateTime ChangedAt { get; set; } = DateTime.UtcNow; // Thời gian thay đổi trạng thái
+    public DateTimeOffset? ChangedAt { get; set; } = DateTime.UtcNow; // Thời gian thay đổi trạng thái
     [MaxLength(50)]
     public string? ChangedBy { get; set; } // Người thay đổi trạng thái (username/mã NV)
     [MaxLength(255)]

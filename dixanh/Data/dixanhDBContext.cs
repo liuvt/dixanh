@@ -1,5 +1,5 @@
-﻿using dixanh.Libraries.Models;
-using Microsoft.AspNetCore.Identity;
+﻿using dixanh.Data.Seeds;
+using dixanh.Libraries.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,90 +21,11 @@ public partial class dixanhDBContext : IdentityDbContext<AppUser>
     {
         base.OnModelCreating(modelBuilder);
 
-        #region Fluent API: Vehicle - VehicleStatus - VehicleStatusHistory 
-        // -----------------------------
-        // VEHICLE
-        // -----------------------------
-        modelBuilder.Entity<Vehicle>()
-            .HasKey(v => v.VehicleId);
+        // ... ApplyConfigurationsFromAssembly(...) nếu bạn có
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(dixanhDBContext).Assembly);
 
-        modelBuilder.Entity<Vehicle>()
-            .Property(x => x.VehicleId)
-            .HasMaxLength(36)
-            .IsUnicode(false);
-
-        modelBuilder.Entity<Vehicle>()
-            .HasIndex(x => x.LicensePlate).IsUnique();
-        modelBuilder.Entity<Vehicle>()
-            .HasIndex(x => new { x.StatusId, x.CreatedAt });
-        modelBuilder.Entity<Vehicle>()
-            .HasIndex(x => x.VehicleCode);
-
-        // Vehicle -> VehicleStatus (không cascade)
-        modelBuilder.Entity<Vehicle>()
-            .HasOne(v => v.Status)
-            .WithMany(s => s.Vehicles)
-            .HasForeignKey(v => v.StatusId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        // -----------------------------
-        // VEHICLE STATUS
-        // -----------------------------
-        modelBuilder.Entity<VehicleStatus>()
-            .HasIndex(x => x.Code)
-            .IsUnique();
-
-        modelBuilder.Entity<VehicleStatus>()
-            .HasIndex(x => new { x.IsActive, x.SortOrder });
-
-        // -----------------------------
-        // VEHICLE STATUS HISTORY
-        // -----------------------------
-
-        // History -> Vehicle (map đúng FK VehicleId, không tạo shadow)
-        modelBuilder.Entity<VehicleStatusHistory>()
-            .Property(x => x.VehicleId)
-            .HasMaxLength(36)
-            .IsUnicode(false);
-
-        modelBuilder.Entity<VehicleStatusHistory>()
-            .HasOne(h => h.Vehicle)
-            .WithMany(v => v.StatusHistories)
-            .HasForeignKey(h => h.VehicleId)
-            .HasPrincipalKey(v => v.VehicleId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        // History -> VehicleStatus (From/To) - không cascade
-        modelBuilder.Entity<VehicleStatusHistory>()
-            .HasOne(h => h.ToStatus)
-            .WithMany()
-            .HasForeignKey(h => h.ToStatusId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<VehicleStatusHistory>()
-            .HasOne(h => h.FromStatus)
-            .WithMany()
-            .HasForeignKey(h => h.FromStatusId)
-            .OnDelete(DeleteBehavior.Restrict);
-        #endregion
-
-        #region Data Seeding: Identity Roles & VehicleStatus
-        // Roles
-        modelBuilder.Entity<IdentityRole>().HasData(
-            new IdentityRole { Id = "1", Name = "Owner", NormalizedName = "OWNER" },
-            new IdentityRole { Id = "2", Name = "Administrator", NormalizedName = "ADMINISTRATOR" },
-            new IdentityRole { Id = "3", Name = "Manager", NormalizedName = "MANAGER" },
-            new IdentityRole { Id = "4", Name = "Driver", NormalizedName = "DRIVER" },
-            new IdentityRole { Id = "5", Name = "Employee", NormalizedName = "EMPLOYEE" }
-        );
-
-        // VehicleStatus
-        modelBuilder.Entity<VehicleStatus>().HasData(
-            new VehicleStatus { StatusId = 1, Code = "ACTIVE", Name = "Hoạt động", IsActive = true, SortOrder = 1 },
-            new VehicleStatus { StatusId = 2, Code = "INACTIVE", Name = "Ngừng hoạt động", IsActive = true, SortOrder = 2 },
-            new VehicleStatus { StatusId = 3, Code = "MAINTENANCE", Name = "Bảo trì", IsActive = true, SortOrder = 3 }
-        );
-        #endregion
+        modelBuilder.SeedIdentityRoles(); // HasData roles
+        modelBuilder.SeedVehicleStatuses(); // HasData vehicle statuses
     }
 }
 

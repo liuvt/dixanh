@@ -36,7 +36,7 @@ public class AppLoginBase : ComponentBase
     {
         _processing = true;
         // submit native form => browser nhận Set-Cookie Identity
-        await JS.InvokeVoidAsync("dixanhSubmitForm", _nativeForm);
+        await JS.InvokeVoidAsync("tvtSubmitForm", _nativeForm);
     }
 
     protected Task CleanForm()

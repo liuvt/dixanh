@@ -52,30 +52,35 @@ namespace dixanh.Data.Migrations
                         new
                         {
                             Id = "1",
+                            ConcurrencyStamp = "ROLE-OWNER-STATIC",
                             Name = "Owner",
                             NormalizedName = "OWNER"
                         },
                         new
                         {
                             Id = "2",
+                            ConcurrencyStamp = "ROLE-ADMIN-STATIC",
                             Name = "Administrator",
                             NormalizedName = "ADMINISTRATOR"
                         },
                         new
                         {
                             Id = "3",
+                            ConcurrencyStamp = "ROLE-MANAGER-STATIC",
                             Name = "Manager",
                             NormalizedName = "MANAGER"
                         },
                         new
                         {
                             Id = "4",
+                            ConcurrencyStamp = "ROLE-DRIVER-STATIC",
                             Name = "Driver",
                             NormalizedName = "DRIVER"
                         },
                         new
                         {
                             Id = "5",
+                            ConcurrencyStamp = "ROLE-EMPLOYEE-STATIC",
                             Name = "Employee",
                             NormalizedName = "EMPLOYEE"
                         });
@@ -410,8 +415,8 @@ namespace dixanh.Data.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset?>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
@@ -428,8 +433,8 @@ namespace dixanh.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<DateTime?>("ManufactureDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset?>("ManufactureDate")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<int?>("SeatCount")
                         .HasColumnType("int");
@@ -437,8 +442,8 @@ namespace dixanh.Data.Migrations
                     b.Property<int>("StatusId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("VehicleCode")
                         .IsRequired()
@@ -530,8 +535,8 @@ namespace dixanh.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime>("ChangedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset?>("ChangedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("ChangedBy")
                         .HasMaxLength(50)

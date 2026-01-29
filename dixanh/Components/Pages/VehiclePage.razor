@@ -126,12 +126,12 @@
                                 <td class="px-4 py-3">@v.Brand</td>
                                 <td class="px-4 py-3">@v.SeatCount</td>
                                 <td class="px-4 py-3">@v.Color</td>
-                                <td class="px-4 py-3">@FormatDate(v.ManufactureDate)</td>
+                                <td class="px-4 py-3">@v.ManufactureDate.ToVnDate()</td>
                                 <td class="px-4 py-3">
                                     @StatusBadge(v.Status?.Code, v.Status?.Name)
                                 </td>
-                                <td class="px-4 py-3">@FormatDateTime(v.CreatedAt)</td>
-                                <td class="px-4 py-3">@FormatDateTime(v.UpdatedAt)</td>
+                                <td class="px-4 py-3">@v.CreatedAt.ToVnDateTime()</td>
+                                <td class="px-4 py-3">@v.UpdatedAt.ToVnDateTime()</td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
                                         <button class="@UiBtnSm" @onclick="() => OpenDrawerView(v.VehicleId)">View</button>

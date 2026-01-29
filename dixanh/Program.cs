@@ -1,5 +1,6 @@
 ﻿using dixanh.Components;
 using dixanh.Data;
+using dixanh.Data.Seeds;
 using dixanh.Libraries.Models;
 using dixanh.Servers;
 using dixanh.Servers.Contracts;
@@ -193,16 +194,15 @@ builder.Services.ConfigureApplicationCookie(opt =>
 
 var app = builder.Build();
 
-// migrate 
+// apply migration trước
 /**/
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<dixanhDBContext>();
     await db.Database.MigrateAsync();
 }
-await Seedding.SeedIdentityAsync(app.Services);
-await Seedding.SeedVehiclesAsync(app.Services);
-
+await SeedVehicles.SeedVehiclesAsync(app.Services);
+await SeedIdentitys.SeedIdentityAsync(app.Services);
 
 // Đọc X-Forwarded-Proto, X-Forwarded-Host từ Nginx
 /* var baseUrl = $"{Request.Scheme}://{Request.Host}";

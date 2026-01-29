@@ -11,7 +11,7 @@
         <div class="absolute inset-0 bg-black/30"></div>
 
         <!-- panel -->
-        <div class="absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-xl">
+        <div class="absolute top-0 right-0 h-full w-full max-w-2xl bg-white shadow-xl">
             <div class="flex items-center justify-between border-b border-slate-200 p-4">
                 <div>
                     <div class="text-sm text-slate-500">Vehicle</div>
@@ -170,7 +170,7 @@
 
                     @if (_tab == "history")
                     {
-                        <div class="rounded-xl border border-slate-200 overflow-hidden">
+                        <div class="overflow-hidden rounded-xl border border-slate-200">
                             <div class="border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
                                 Lịch sử trạng thái (mới nhất trước)
                             </div>
@@ -196,7 +196,7 @@
                                             @foreach (var h in _history)
                                             {
                                                 <tr class="hover:bg-slate-50">
-                                                    <td class="px-4 py-3">@h.ChangedAt.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                                    <td class="px-4 py-3">@h.ChangedAt.ToVnDateTime()</td>
                                                     <td class="px-4 py-3">@h.FromStatus?.Name</td>
                                                     <td class="px-4 py-3">@h.ToStatus?.Name</td>
                                                     <td class="px-4 py-3">@h.ChangedBy</td>
