@@ -1,4 +1,6 @@
-﻿window.initTvtCarousel = function () {
+﻿// TVT Carousel - A simple carousel implementation
+// Trượt ảnh / nội dung tự động với nút điều khiển và chấm chỉ mục
+window.initTvtCarousel = function () {
     const carousels = document.querySelectorAll('[data-tvt-carousel]');
     if (!carousels.length) return;
 

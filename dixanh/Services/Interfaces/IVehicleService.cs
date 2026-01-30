@@ -22,4 +22,7 @@ public interface IVehicleService
     Task<Vehicle> CreateAsync(VehicleCreateDto dto, string actor);
     Task<Vehicle> UpdateAsync(VehicleUpdateDto dto, string actor);
     Task ChangeStatusAsync(string vehicleId, int toStatusId, string actor, string? note = null);
+
+    // Thống kê dashboard
+    Task<VehicleDashboardDto> GetDashboardAsync(int monthsBack = 12, int yearsBack = 5, CancellationToken ct = default);
 }

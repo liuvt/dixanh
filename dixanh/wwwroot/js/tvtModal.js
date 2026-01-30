@@ -1,4 +1,5 @@
 ﻿// wwwroot/js/tvtModal.js
+// ẩn /hiện modal và khóa cuộn trang
 window.tvtModal = {
     lock: function (on) {
         const html = document.documentElement;

@@ -17,6 +17,9 @@ public sealed class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
 
         b.HasIndex(x => x.LicensePlate).IsUnique();
         b.HasIndex(x => new { x.StatusId, x.CreatedAt });
+        //Index for dashboard
+        b.HasIndex(x => x.CreatedAt);   // trend theo CreatedAt
+        b.HasIndex(x => x.StatusId);    // pie theo status (nhanh hơn)
 
         // Vehicle -> VehicleStatus (no cascade)
         b.HasOne(x => x.Status)

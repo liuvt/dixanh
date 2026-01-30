@@ -69,8 +69,8 @@ builder.Services.AddPooledDbContextFactory<dixanhDBContext>(opt =>
 builder.Services.AddScoped(
     defaultClient => new HttpClient
     {
-        BaseAddress = new Uri(builder.Configuration["API:Default"] ?? throw new InvalidOperationException("Can't found [Secret Key] in appsettings.json !"))
-        //BaseAddress = new Uri(builder.Configuration["API:FontEnd"] ?? throw new InvalidOperationException("Can't found [Secret Key] in appsettings.json !"))
+        //BaseAddress = new Uri(builder.Configuration["API:Default"] ?? throw new InvalidOperationException("Can't found [Secret Key] in appsettings.json !"))
+        BaseAddress = new Uri(builder.Configuration["API:FontEnd"] ?? throw new InvalidOperationException("Can't found [Secret Key] in appsettings.json !"))
     });
 
 // API: Add Jwt, Gooogle Authentication
@@ -205,7 +205,7 @@ builder.Services.ConfigureApplicationCookie(opt =>
 var app = builder.Build();
 
 // apply migration trước
-/**/
+/*
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<dixanhDBContext>();
@@ -213,6 +213,7 @@ using (var scope = app.Services.CreateScope())
 }
 await SeedVehicles.SeedVehiclesAsync(app.Services);
 await SeedIdentitys.SeedIdentityAsync(app.Services);
+*/
 
 // Đọc X-Forwarded-Proto, X-Forwarded-Host từ Nginx
 /* var baseUrl = $"{Request.Scheme}://{Request.Host}";

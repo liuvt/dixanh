@@ -250,4 +250,91 @@ public sealed class VehicleService : IVehicleService
 
     private static string NormalizePlate(string s)
     => (s ?? "").Trim().ToUpperInvariant();
+
+    // Thống kê dashboard
+    public async Task<VehicleDashboardDto> GetDashboardAsync(int monthsBack = 12, int yearsBack = 5, CancellationToken ct = default)
+    {
+        if (monthsBack < 1) monthsBack = 12;
+        if (yearsBack < 1) yearsBack = 5;
+
+        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+
+        // Total
+        var total = await db.Vehicles.AsNoTracking().CountAsync(ct);
+        var _lastDataAt = await db.Vehicles.AsNoTracking().MaxAsync(v => (DateTimeOffset?)((v.UpdatedAt ?? v.CreatedAt)));
+
+        // PIE: group theo StatusId, join VehicleStatuses để lấy tên
+        var statusCounts = await db.Vehicles.AsNoTracking()
+            .GroupBy(v => v.StatusId)
+            .Select(g => new { StatusId = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        var statusNames = await db.VehicleStatuses.AsNoTracking()
+            .Select(s => new { s.StatusId, s.Name })
+            .ToListAsync(ct);
+
+        var nameMap = statusNames.ToDictionary(x => x.StatusId, x => x.Name);
+
+        var pie = statusCounts
+            .Select(x =>
+            {
+                var name = nameMap.TryGetValue(x.StatusId, out var n) ? n : $"Status {x.StatusId}";
+                var percent = total == 0 ? 0 : Math.Round((double)x.Count * 100.0 / total, 2);
+                return new PieStatusItemDto(x.StatusId, name, x.Count, percent);
+            })
+            .OrderByDescending(x => x.Count)
+            .ToList();
+
+        // TREND theo CreatedAt (DateTimeOffset?):
+        // - loại null CreatedAt (nếu có) hoặc bạn có thể thay null = UtcNow khi seed
+        // - group theo Year/Month để SQL translate tốt
+        var nowUtc = DateTimeOffset.UtcNow;
+
+        // Trend by Month: monthsBack tháng gần nhất (bao gồm tháng hiện tại)
+        var firstMonthUtc = new DateTimeOffset(nowUtc.Year, nowUtc.Month, 1, 0, 0, 0, TimeSpan.Zero);
+        var startMonthUtc = firstMonthUtc.AddMonths(-(monthsBack - 1));
+
+        var rawMonth = await db.Vehicles.AsNoTracking()
+            .Where(v => v.CreatedAt.HasValue && v.CreatedAt.Value >= startMonthUtc)
+            .GroupBy(v => new { v.CreatedAt!.Value.Year, v.CreatedAt!.Value.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
+            .ToListAsync(ct);
+
+        var monthMap = rawMonth.ToDictionary(x => (x.Year, x.Month), x => x.Count);
+
+        var trendByMonth = new List<TrendPointDto>(monthsBack);
+        for (int i = 0; i < monthsBack; i++)
+        {
+            var m = startMonthUtc.AddMonths(i);
+            var label = $"{m.Month:D2}/{m.Year}";
+            trendByMonth.Add(new TrendPointDto(label, monthMap.TryGetValue((m.Year, m.Month), out var c) ? c : 0));
+        }
+
+        // Trend by Year: yearsBack năm gần nhất (bao gồm năm hiện tại)
+        var startYear = nowUtc.Year - (yearsBack - 1);
+        var startYearUtc = new DateTimeOffset(startYear, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+        var rawYear = await db.Vehicles.AsNoTracking()
+            .Where(v => v.CreatedAt.HasValue && v.CreatedAt.Value >= startYearUtc)
+            .GroupBy(v => v.CreatedAt!.Value.Year)
+            .Select(g => new { Year = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        var yearMap = rawYear.ToDictionary(x => x.Year, x => x.Count);
+
+        var trendByYear = new List<TrendPointDto>(yearsBack);
+        for (int y = startYear; y <= nowUtc.Year; y++)
+            trendByYear.Add(new TrendPointDto(y.ToString(), yearMap.TryGetValue(y, out var c) ? c : 0));
+
+        return new VehicleDashboardDto
+        {
+            TotalVehicles = total,
+            LastDataAt = _lastDataAt,
+            PieByStatus = pie,
+            TrendByMonth = trendByMonth,
+            TrendByYear = trendByYear
+        };
+    }
+
+
 }

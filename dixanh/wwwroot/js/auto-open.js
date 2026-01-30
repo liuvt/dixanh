@@ -1,4 +1,5 @@
-﻿window.adWindow = null;
+﻿// Quản lý cửa sổ quảng cáo
+window.adWindow = null;
 
 window.openAd = function () {
     // Chỉ mở nếu chưa có hoặc đã bị đóng

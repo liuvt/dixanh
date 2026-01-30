@@ -1,7 +1,177 @@
 ﻿@page "/"
 @attribute [Authorize]
-
+@inject IVehicleService vehicleService
+@inject IJSRuntime JS
 <PageTitle>Dashboard - Đi Xanh</PageTitle>
-<h1>Hello, world!</h1>
-        Welcome to your new app.
 
+<main class="flex-1 p-2">
+    <div class="space-y-2">
+        <!-- Header compact -->
+        <div class="flex items-end justify-between px-2">
+            <div>
+                <div class="text-xs text-slate-500">Dashboard</div>
+
+                <div class="flex items-center gap-2">
+                    <h1 class="text-lg font-semibold text-slate-900">Thống kê xe</h1>
+
+                    <span class="text-xs text-slate-500">
+                        Cập nhật:
+                        <span class="font-medium text-slate-700">
+                            @_data?.LastDataAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")
+                        </span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="text-xs text-slate-600">
+                Tổng xe: <span class="font-semibold text-slate-900">@_data?.TotalVehicles</span>
+            </div>
+        </div>
+
+        <!-- Top row: Pie + Month trend -->
+        <div class="grid grid-cols-1 gap-2 lg:grid-cols-3">
+            <!-- PIE compact -->
+            <div class="rounded-xl bg-white p-3 ring-1 ring-slate-200">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm font-semibold text-slate-900">Trạng thái</div>
+                    <div class="text-xs text-slate-500">Pie</div>
+                </div>
+
+                <div class="mt-2 grid grid-cols-2 items-center gap-2">
+                    <!-- Pie nhỏ -->
+                    <div class="h-36">
+                        <canvas id="pieStatus" class="!h-36 !w-full"></canvas>
+                    </div>
+
+                    <!-- Legend compact -->
+                    <div class="space-y-1 text-xs">
+                        @if (_data?.PieByStatus?.Count > 0)
+                        {
+                            @foreach (var x in _data.PieByStatus)
+                            {
+                                <div class="flex items-center justify-between">
+                                    <span class="truncate text-slate-700">@x.StatusName</span>
+                                    <span class="font-semibold text-slate-900">
+                                        @x.Count <span class="font-normal text-slate-500">(@x.Percent%)</span>
+                                    </span>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Month trend compact -->
+            <div class="rounded-xl bg-white p-3 ring-1 ring-slate-200 lg:col-span-2">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-semibold text-slate-900">Biến động theo tháng</div>
+                        <div class="text-xs text-slate-500">Ngày tạo xe</div>
+                    </div>
+
+                    <!-- chừa chỗ sau này đặt filter 3/6/12 -->
+                    <div class="text-xs text-slate-500">12M</div>
+                </div>
+
+                <div class="mt-2 h-40">
+                    <canvas id="barMonth" class="!h-40 !w-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom row: Year trend + placeholder cards -->
+        <div class="grid grid-cols-1 gap-2 lg:grid-cols-4">
+            <!-- Year trend compact -->
+            <div class="rounded-xl bg-white p-3 ring-1 ring-slate-200 lg:col-span-2">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-semibold text-slate-900">Theo năm</div>
+                        <div class="text-xs text-slate-500">Ngày tạo xe</div>
+                    </div>
+                    <div class="text-xs text-slate-500">5Y</div>
+                </div>
+
+                <div class="mt-2 h-36">
+                    <canvas id="barYear" class="!h-36 !w-full"></canvas>
+                </div>
+            </div>
+
+            <!-- Các card KPI nhỏ để nhét thêm báo cáo khác -->
+            <div class="rounded-xl bg-white p-3 ring-1 ring-slate-200">
+                <div class="text-xs text-slate-500">Hợp đồng mới</div>
+                <div class="mt-1 text-2xl font-semibold text-slate-900">—</div>
+                <div class="mt-1 text-xs text-slate-500">Tháng này</div>
+            </div>
+
+            <div class="rounded-xl bg-white p-3 ring-1 ring-slate-200">
+                <div class="text-xs text-slate-500">Tài xế mới</div>
+                <div class="mt-1 text-2xl font-semibold text-slate-900">—</div>
+                <div class="mt-1 text-xs text-slate-500">Tháng này</div>
+            </div>
+        </div>
+    </div>
+</main>
+
+@code {
+    private VehicleDashboardDto? _data;
+    private bool _needRenderCharts;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _data = await vehicleService.GetDashboardAsync(monthsBack: 12, yearsBack: 5);
+
+            // Báo Blazor render lại UI (list + canvas chắc chắn đã có)
+            _needRenderCharts = true;
+            await InvokeAsync(StateHasChanged);
+            return; // QUAN TRỌNG: dừng ở đây, chưa gọi JS
+        }
+
+        if (!_needRenderCharts || _data is null) return;
+        _needRenderCharts = false;
+
+        for (var i = 0; i < 40; i++)
+        {
+            var ok = await JS.InvokeAsync<bool>("tvtChartsReady");
+            if (ok) break;
+            await Task.Delay(50);
+        }
+
+        // PIE
+        var pieLabels = _data.PieByStatus.Select(x => x.StatusName).ToArray();
+        var pieValues = _data.PieByStatus.Select(x => x.Count).ToArray();
+
+        await JS.InvokeVoidAsync(
+            "tvtCharts.renderPie",
+            "pieStatus",
+            pieLabels,
+            pieValues,
+            new { showLegend = false, showPercent = true }
+        );
+
+        // MONTH
+        var mLabels = _data.TrendByMonth.Select(x => x.Label).ToArray();
+        var mValues = _data.TrendByMonth.Select(x => x.Count).ToArray();
+
+        await JS.InvokeVoidAsync(
+            "tvtCharts.renderBar",
+            "barMonth",
+            mLabels,
+            mValues,
+            new { title = "Xe tạo mới", showLegend = false, maxXTicks = 12 }
+        );
+
+        // YEAR (SỬA ID: barYear)
+        var yLabels = _data.TrendByYear.Select(x => x.Label).ToArray();
+        var yValues = _data.TrendByYear.Select(x => x.Count).ToArray();
+
+        await JS.InvokeVoidAsync(
+            "tvtCharts.renderBar",
+            "barYear",
+            yLabels,
+            yValues,
+            new { title = "Xe tạo mới", showLegend = false, maxXTicks = 6 }
+        );
+    }
+}
