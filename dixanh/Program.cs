@@ -51,7 +51,9 @@ builder.Services.AddDbContext<dixanhDBContext>(opt =>
         ?? throw new InvalidOperationException("Can't found ConnectionStrings:Vps"));
     //opt.UseSqlServer(builder.Configuration["ConnectionStrings:Default"] ?? throw new InvalidOperationException("Can't found [Secret Key] in appsettings.json !"));
 
-});
+},
+    contextLifetime: ServiceLifetime.Scoped,
+    optionsLifetime: ServiceLifetime.Singleton);
 
 // ✅ Thêm factory để dùng trong Services (tránh concurrency)
 builder.Services.AddPooledDbContextFactory<dixanhDBContext>(opt =>
