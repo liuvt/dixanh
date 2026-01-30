@@ -13,4 +13,6 @@ public interface IVehicleStatusService
     Task<VehicleStatus?> GetByCodeAsync(string code);
     // Cập nhật trạng thái xe
     Task UpdateAsync(int id, string name, bool isActive, int sortOrder);
+
+    Task<VehicleStatus> CreateAsync(string code, string name, bool isActive, int sortOrder);
 }

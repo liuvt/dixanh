@@ -12,8 +12,6 @@ public class Vehicle
     public string VehicleId { get; set; } = Guid.NewGuid().ToString();
     [Required, MaxLength(20)]
     public string LicensePlate { get; set; } = string.Empty;        // Biển kiểm soát (biển số xe). Ví dụ: 68A-12345
-    [MaxLength(30)]
-    public string VehicleCode { get; set; } = string.Empty;         // Số hiệu xe nội bộ (mã xe trong đội/chi nhánh)
     [MaxLength(50)]
     public string Brand { get; set; } = string.Empty;               // Thương hiệu/Hãng xe. Ví dụ: VinFast, Toyota...
     public int? SeatCount { get; set; }                             // Số chỗ ngồi (4/5/7...), có thể null nếu chưa cập nhật

@@ -80,5 +80,29 @@ public sealed class VehicleStatusService : IVehicleStatusService
 
         await db.SaveChangesAsync();
     }
+    public async Task<VehicleStatus> CreateAsync(string code, string name, bool isActive, int sortOrder)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
 
+        code = (code ?? "").Trim().ToUpperInvariant();
+        name = (name ?? "").Trim();
+
+        if (string.IsNullOrWhiteSpace(code)) throw new ArgumentException("Code rỗng.");
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name rỗng.");
+
+        var exists = await db.Set<VehicleStatus>().AnyAsync(x => x.Code == code);
+        if (exists) throw new InvalidOperationException($"Status Code '{code}' đã tồn tại.");
+
+        var st = new VehicleStatus
+        {
+            Code = code,
+            Name = name,
+            IsActive = isActive,
+            SortOrder = sortOrder
+        };
+
+        db.Set<VehicleStatus>().Add(st);
+        await db.SaveChangesAsync();
+        return st;
+    }
 }

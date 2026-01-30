@@ -9,7 +9,7 @@ public sealed class VehicleStatusHistoryConfiguration : IEntityTypeConfiguration
     public void Configure(EntityTypeBuilder<VehicleStatusHistory> b)
     {
         b.HasKey(x => x.Id);
-
+        b.HasIndex(x => new { x.VehicleId, x.ChangedAt });
         b.Property(x => x.VehicleId)
             .HasMaxLength(36)
             .IsUnicode(false);

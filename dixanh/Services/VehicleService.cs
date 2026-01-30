@@ -1,5 +1,6 @@
 ﻿using dixanh.Data;
 using dixanh.Helpers;
+using dixanh.Libraries.Entities;
 using dixanh.Libraries.Models;
 using dixanh.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -101,120 +102,144 @@ public sealed class VehicleService : IVehicleService
     //     EngineNumber = "VFCAFB210
     // }, "admin-user");
     // createdBy: người tạo xe (username/mã NV)
-    public async Task<string> CreateAsync(Vehicle v, string createdBy)
+    public async Task<Vehicle> CreateAsync(VehicleCreateDto dto, string actor)
     {
-        if (string.IsNullOrWhiteSpace(v.LicensePlate))
-            throw new ArgumentException("LicensePlate is required.", nameof(v.LicensePlate));
-
-        if (string.IsNullOrWhiteSpace(v.VehicleId))
-            v.VehicleId = Guid.NewGuid().ToString();
-
         await using var db = await _dbFactory.CreateDbContextAsync();
-        await using var tx = await db.Database.BeginTransactionAsync();
 
-        v.CreatedBy = createdBy;
-        v.CreatedAt = DateTimeOffset.UtcNow; // ✅ DateTimeOffset
-        v.UpdatedAt = null;
+        // 1) validate StatusId tồn tại
+        var statusExists = await db.Set<VehicleStatus>()
+            .AnyAsync(x => x.StatusId == dto.StatusId);
+        if (!statusExists) throw new InvalidOperationException($"StatusId={dto.StatusId} không tồn tại.");
 
-        if (v.StatusId <= 0) v.StatusId = STATUS_ACTIVE;
+        // 2) validate biển số unique (khuyến nghị thêm unique index)
+        var plate = NormalizePlate(dto.LicensePlate);
+        var plateExists = await db.Vehicles.AnyAsync(x => x.LicensePlate == plate);
+        if (plateExists) throw new InvalidOperationException($"Biển số '{plate}' đã tồn tại.");
 
-        db.Vehicles.Add(v);
-
-        db.VehicleStatusHistories.Add(new VehicleStatusHistory
+        var vehicle = new Vehicle
         {
-            VehicleId = v.VehicleId,
+            VehicleId = Guid.NewGuid().ToString(),
+            LicensePlate = plate,
+            Brand = dto.Brand?.Trim() ?? "",
+            SeatCount = dto.SeatCount,
+            Color = dto.Color?.Trim() ?? "",
+            ManufactureDate = dto.ManufactureDate,
+            VehicleType = dto.VehicleType?.Trim() ?? "",
+            ChassisNumber = dto.ChassisNumber?.Trim() ?? "",
+            EngineNumber = dto.EngineNumber?.Trim() ?? "",
+            CreatedBy = actor ?? "",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = null,
+            StatusId = dto.StatusId
+        };
+
+        // 3) add history INIT
+        var history = new VehicleStatusHistory
+        {
+            VehicleId = vehicle.VehicleId,
             FromStatusId = null,
-            ToStatusId = v.StatusId,
-            ChangedAt = DateTimeOffset.UtcNow, // ✅ DateTimeOffset
-            ChangedBy = createdBy,
-            Note = "Create vehicle"
-        });
+            ToStatusId = dto.StatusId,
+            ChangedAt = DateTimeOffset.UtcNow,
+            ChangedBy = actor,
+            Note = "INIT"
+        };
+
+        db.Vehicles.Add(vehicle);
+        db.Set<VehicleStatusHistory>().Add(history);
 
         await db.SaveChangesAsync();
-        await tx.CommitAsync();
-
-        return v.VehicleId;
+        return vehicle;
     }
 
-    // Cập nhật thông tin xe
-    // Ví dụ sử dụng:
-    // await vehicleService.UpdateInfoAsync(new Vehicle
-    // {
-    //     VehicleId = "vehicle-id-123",
-    //     LicensePlate = "68A-54321",
-    //     VehicleCode = "TX-002",
-    //     Brand = "Toyota",
-    //     SeatCount = 7,
-    //     Color = "Đỏ",
-    //     ManufactureDate = new DateTimeOffset(new DateTime(2020, 5, 1)),
-    //     VehicleType = "Taxi xăng",
-    //     ChassisNumber = "XYZ1234567890",
-    //     EngineNumber = "ENG987654
-    // });
-    public async Task UpdateInfoAsync(Vehicle input)
+    public async Task<Vehicle> UpdateAsync(VehicleUpdateDto dto, string actor)
     {
-        if (string.IsNullOrWhiteSpace(input.VehicleId))
-            throw new ArgumentException("VehicleId is required.", nameof(input.VehicleId));
-
+        // load vehicle
         await using var db = await _dbFactory.CreateDbContextAsync();
+        // validate vehicle tồn tại
+        var vehicle = await db.Vehicles
+            .FirstOrDefaultAsync(x => x.VehicleId == dto.VehicleId);
+        // validate vehicle tồn tại
+        if (vehicle is null) throw new KeyNotFoundException($"Không tìm thấy VehicleId={dto.VehicleId}");
 
-        var cur = await db.Vehicles.FirstOrDefaultAsync(x => x.VehicleId == input.VehicleId);
-        if (cur == null) return;
+        // validate status mới tồn tại
+        var statusExists = await db.Set<VehicleStatus>()
+            .AnyAsync(x => x.StatusId == dto.StatusId);
+        if (!statusExists) throw new InvalidOperationException($"StatusId={dto.StatusId} không tồn tại.");
 
-        cur.LicensePlate = input.LicensePlate;
-        cur.VehicleCode = input.VehicleCode;
-        cur.Brand = input.Brand;
-        cur.SeatCount = input.SeatCount;
-        cur.Color = input.Color;
-        cur.ManufactureDate = input.ManufactureDate;
-        cur.VehicleType = input.VehicleType;
-        cur.ChassisNumber = input.ChassisNumber;
-        cur.EngineNumber = input.EngineNumber;
+        // validate biển số unique (khuyến nghị thêm unique index)
+        var plate = NormalizePlate(dto.LicensePlate);
+        var plateExists = await db.Vehicles.AnyAsync(x => x.VehicleId != dto.VehicleId && x.LicensePlate == plate);
+        if (plateExists) throw new InvalidOperationException($"Biển số '{plate}' đã tồn tại.");
 
-        cur.UpdatedAt = DateTimeOffset.UtcNow; // ✅ DateTimeOffset
+        // lưu trạng thái cũ để ghi history nếu thay đổi
+        var oldStatusId = vehicle.StatusId;
 
-        await db.SaveChangesAsync();
-    }
+        // cập nhật thông tin
+        vehicle.LicensePlate = plate;
+        vehicle.Brand = dto.Brand?.Trim() ?? "";
+        vehicle.SeatCount = dto.SeatCount;
+        vehicle.Color = dto.Color?.Trim() ?? "";
+        vehicle.ManufactureDate = dto.ManufactureDate;
+        vehicle.VehicleType = dto.VehicleType?.Trim() ?? "";
+        vehicle.ChassisNumber = dto.ChassisNumber?.Trim() ?? "";
+        vehicle.EngineNumber = dto.EngineNumber?.Trim() ?? "";
+        vehicle.UpdatedAt = DateTimeOffset.UtcNow;
 
-    // Đổi trạng thái xe và ghi lịch sử
-    // toStatusId: 1=ACTIVE, 2=INACTIVE, 3=MAINTENANCE
-    // changedBy: người thực hiện thay đổi (username/mã NV)
-    // note: ghi chú về thay đổi trạng thái
-    // Ví dụ sử dụng:
-    // await vehicleService.ChangeStatusAsync("vehicle-id-123", 2, "admin-user", "Ngừng hoạt động do bảo trì");
-    public async Task ChangeStatusAsync(string vehicleId, int toStatusId, string changedBy, string? note = null)
-    {
-        await using var db = await _dbFactory.CreateDbContextAsync();
-
-        var statusExists = await db.VehicleStatuses.AsNoTracking()
-            .AnyAsync(s => s.StatusId == toStatusId);
-
-        if (!statusExists)
-            throw new InvalidOperationException($"StatusId={toStatusId} không tồn tại.");
-
-        await using var tx = await db.Database.BeginTransactionAsync();
-
-        var cur = await db.Vehicles.FirstOrDefaultAsync(x => x.VehicleId == vehicleId);
-        if (cur == null) return;
-
-        if (cur.StatusId == toStatusId) return;
-
-        var from = cur.StatusId;
-        cur.StatusId = toStatusId;
-        cur.UpdatedAt = DateTimeOffset.UtcNow;
-
-        db.VehicleStatusHistories.Add(new VehicleStatusHistory
+        // nếu đổi trạng thái thì ghi lịch sử
+        if (oldStatusId != dto.StatusId)
         {
-            VehicleId = vehicleId,
-            FromStatusId = from,
+            vehicle.StatusId = dto.StatusId;
+
+            db.Set<VehicleStatusHistory>().Add(new VehicleStatusHistory
+            {
+                VehicleId = vehicle.VehicleId,
+                FromStatusId = oldStatusId,
+                ToStatusId = dto.StatusId,
+                ChangedAt = DateTimeOffset.UtcNow,
+                ChangedBy = actor,
+                Note = "Update vehicle (status changed)"
+            });
+        }
+
+        await db.SaveChangesAsync();
+        return vehicle;
+    }
+
+    // API riêng chỉ đổi trạng thái (đúng nghiệp vụ hơn UpdateAsync nếu chỉ đổi status)
+    public async Task ChangeStatusAsync(string vehicleId, int toStatusId, string actor, string? note = null)
+    {
+        // 1) load vehicle
+        await using var db = await _dbFactory.CreateDbContextAsync();
+
+        // 2) validate vehicle tồn tại
+        var vehicle = await db.Vehicles.FirstOrDefaultAsync(x => x.VehicleId == vehicleId);
+        if (vehicle is null) throw new KeyNotFoundException($"Không tìm thấy VehicleId={vehicleId}");
+
+        // 3) validate status tồn tại
+        var statusExists = await db.Set<VehicleStatus>()
+            .AnyAsync(x => x.StatusId == toStatusId);
+        if (!statusExists) throw new InvalidOperationException($"StatusId={toStatusId} không tồn tại.");
+
+        // 4) nếu khác trạng thái hiện tại thì đổi và ghi lịch sử
+        var fromStatusId = vehicle.StatusId;
+        if (fromStatusId == toStatusId) return; // không đổi thì thôi
+
+        // 5) đổi trạng thái và ghi lịch sử
+        vehicle.StatusId = toStatusId;
+        vehicle.UpdatedAt = DateTimeOffset.UtcNow;
+
+        // thêm lịch sử
+        db.Set<VehicleStatusHistory>().Add(new VehicleStatusHistory
+        {
+            VehicleId = vehicle.VehicleId,
+            FromStatusId = fromStatusId,
             ToStatusId = toStatusId,
             ChangedAt = DateTimeOffset.UtcNow,
-            ChangedBy = changedBy,
+            ChangedBy = actor,
             Note = note
         });
-
+        // 6) lưu
         await db.SaveChangesAsync();
-        await tx.CommitAsync();
     }
 
     public Task SoftDeleteAsync(string vehicleId, string changedBy, string? reason = null) =>
@@ -222,4 +247,7 @@ public sealed class VehicleService : IVehicleService
 
     public Task RestoreAsync(string vehicleId, string changedBy, string? note = null) =>
         ChangeStatusAsync(vehicleId, STATUS_ACTIVE, changedBy, note ?? "Restore (ACTIVE)");
+
+    private static string NormalizePlate(string s)
+    => (s ?? "").Trim().ToUpperInvariant();
 }

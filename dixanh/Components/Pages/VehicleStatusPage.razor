@@ -1,82 +1,188 @@
 ﻿@page "/vehicle-statuses"
-@inject IVehicleStatusService vehicleStatusService
+@attribute [Authorize]
+@inject IVehicleStatusService VehicleStatusService
 
 <PageTitle>Trạng thái xe - Đi Xanh</PageTitle>
-<AuthorizeView Context="authContext">
-    <Authorized>
-        <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div class="p-4">
-                <div class="text-xl font-semibold text-slate-900">Danh mục trạng thái xe</div>
-                <div class="mt-3 overflow-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-slate-50">
-                            <tr class="text-left text-slate-600">
-                                <th class="px-4 py-3 font-medium">Id</th>
-                                <th class="px-4 py-3 font-medium">Code</th>
-                                <th class="px-4 py-3 font-medium">Name</th>
-                                <th class="px-4 py-3 font-medium">IsActive</th>
-                                <th class="px-4 py-3 font-medium">Sort</th>
-                                <th class="px-4 py-3 font-medium">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-200">
+
+<main class="flex-1 p-2">
+    <div class="mb-4">
+        <div class="text-sm text-slate-500">Dashboard / <span class="text-slate-700">Vehicle Statuses</span></div>
+        <div class="mt-1 flex items-center justify-between gap-3">
+            <div class="text-2xl font-semibold text-slate-900">Danh mục trạng thái xe</div>
+        </div>
+    </div>
+
+    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div class="p-4">
+            <div class="flex items-center justify-between gap-3">
+                <div class="text-sm text-slate-600">
+                    Quản lý danh mục trạng thái (Code không chỉnh sửa sau khi tạo).
+                </div>
+
+                <button class="@UiBtnOutline" @onclick="ReloadAsync" disabled="@_loading">Reload</button>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <div class="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                    @_error
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(_ok))
+            {
+                <div class="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                    @_ok
+                </div>
+            }
+
+            <div class="mt-3 overflow-auto">
+                <table class="w-full min-w-[900px] text-sm">
+                    <thead class="bg-slate-50">
+                        <tr class="text-left text-slate-600">
+                            <th class="px-4 py-3 font-medium">Id</th>
+                            <th class="px-4 py-3 font-medium">Code</th>
+                            <th class="px-4 py-3 font-medium">Name</th>
+                            <th class="px-4 py-3 font-medium">IsActive</th>
+                            <th class="px-4 py-3 font-medium">Sort</th>
+                            <th class="px-4 py-3 font-medium">Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-slate-200">
+                        <!-- Create row -->
+                        <tr class="bg-white">
+                            <td class="px-4 py-3 text-slate-500">New</td>
+                            <td class="px-4 py-3">
+                                <input class="@UiInput"
+                                       placeholder="ACTIVE"
+                                       @bind="_newCode" @bind:event="oninput" />
+                            </td>
+                            <td class="px-4 py-3">
+                                <input class="@UiInput"
+                                       placeholder="Hoạt động"
+                                       @bind="_newName" @bind:event="oninput" />
+                            </td>
+                            <td class="px-4 py-3">
+                                <input type="checkbox" class="h-4 w-4" @bind="_newIsActive" />
+                            </td>
+                            <td class="px-4 py-3">
+                                <input type="number" class="@UiInput w-24"
+                                       @bind="_newSortOrder" />
+                            </td>
+                            <td class="px-4 py-3">
+                                <button class="@UiBtnPrimary"
+                                        @onclick="CreateAsync"
+                                        disabled="@_saving">
+                                    + Tạo
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Items -->
+                        @if (_loading)
+                        {
+                            <tr><td class="px-4 py-6 text-slate-600" colspan="6">Loading...</td></tr>
+                        }
+                        else if (_items.Count == 0)
+                        {
+                            <tr><td class="px-4 py-6 text-slate-600" colspan="6">No data</td></tr>
+                        }
+                        else
+                        {
                             @foreach (var s in _items)
                             {
                                 <tr class="hover:bg-slate-50">
                                     <td class="px-4 py-3">@s.StatusId</td>
-                                    <td class="px-4 py-3">@s.Code</td>
                                     <td class="px-4 py-3">
-                                        <input class="w-full rounded-lg border-slate-300"
+                                        <input class="@UiInput"
+                                               value="@s.Code" disabled />
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <input class="@UiInput"
                                                @bind="s.Name" />
                                     </td>
                                     <td class="px-4 py-3">
-                                        <input type="checkbox" @bind="s.IsActive" />
+                                        <input type="checkbox" class="h-4 w-4" @bind="s.IsActive" />
                                     </td>
                                     <td class="px-4 py-3">
-                                        <input type="number" class="w-24 rounded-lg border-slate-300" @bind="s.SortOrder" />
+                                        <input type="number" class="@UiInput w-24" @bind="s.SortOrder" />
                                     </td>
                                     <td class="px-4 py-3">
                                         <button class="@UiBtnPrimary"
-                                                @onclick="() => SaveAsync(s)">
+                                                @onclick="() => SaveAsync(s)"
+                                                disabled="@_saving">
                                             Lưu
                                         </button>
                                     </td>
                                 </tr>
                             }
-                        </tbody>
-                    </table>
-                </div>
+                        }
+                    </tbody>
+                </table>
             </div>
-        </section>
-    </Authorized>
-    <NotAuthorized>
-    </NotAuthorized>
-</AuthorizeView>
-
+        </div>
+    </section>
+</main>
 
 @code {
     private List<VehicleStatus> _items = new();
+    private bool _loading;
+    private bool _saving;
+    private string? _error;
+    private string? _ok;
 
-    protected override async Task OnInitializedAsync()
+    private string _newCode = "";
+    private string _newName = "";
+    private bool _newIsActive = true;
+    private int _newSortOrder = 0;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
     {
-        _items = await vehicleStatusService.GetAllAsync(onlyActive: false);
+        _error = _ok = null;
+        _loading = true;
+        try
+        {
+            _items = await VehicleStatusService.GetAllAsync(onlyActive: false);
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _loading = false; }
+    }
+
+    private async Task CreateAsync()
+    {
+        _error = _ok = null;
+        _saving = true;
+        try
+        {
+            await VehicleStatusService.CreateAsync(_newCode, _newName, _newIsActive, _newSortOrder);
+            _newCode = ""; _newName = ""; _newIsActive = true; _newSortOrder = 0;
+            _ok = "Đã tạo trạng thái.";
+            _items = await VehicleStatusService.GetAllAsync(onlyActive: false);
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _saving = false; }
     }
 
     private async Task SaveAsync(VehicleStatus s)
     {
-        await vehicleStatusService.UpdateAsync(s.StatusId, s.Name, s.IsActive, s.SortOrder);
-        _items = await vehicleStatusService.GetAllAsync(onlyActive: false);
+        _error = _ok = null;
+        _saving = true;
+        try
+        {
+            await VehicleStatusService.UpdateAsync(s.StatusId, s.Name, s.IsActive, s.SortOrder);
+            _ok = "Đã lưu.";
+            _items = await VehicleStatusService.GetAllAsync(onlyActive: false);
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _saving = false; }
     }
 
-
-    //Thiết kế UI Tailwind CSS
-    private string UiInput => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
-    private string UiSelect => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
-
+    // UI Tailwind (giữ giống layout trên)
+    private string UiInput => "h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
     private string UiBtnBase => "inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-emerald-500/20";
-    private string UiBtnOutline => $"{UiBtnBase} min-w-[120px] border border-slate-300 bg-white text-slate-700 hover:bg-slate-50";
-    private string UiBtnPrimary => $"{UiBtnBase} min-w-[120px] border border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700";
-
-    private string UiBtnSm => "inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50";
-
+    private string UiBtnOutline => $"{UiBtnBase} border border-slate-300 bg-white text-slate-700 hover:bg-slate-50";
+    private string UiBtnPrimary => $"{UiBtnBase} border border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700";
 }

@@ -33,7 +33,6 @@ public static class SeedVehicles
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f5",
             LicensePlate = "68G-000.45",
-            VehicleCode = "RG7032",
             Brand = "Vinfast VF5",
             SeatCount = 4,
             Color = "Xanh1",
@@ -50,7 +49,6 @@ public static class SeedVehicles
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f1",
             LicensePlate = "68G-000.01",
-            VehicleCode = "CM8059",
             Brand = "Vinfast VFe34",
             SeatCount = 4,
             Color = "Xanh",
@@ -67,7 +65,6 @@ public static class SeedVehicles
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f2",
             LicensePlate = "68F-009.35",
-            VehicleCode = "CM8060",
             Brand = "Vinfast Lime",
             SeatCount = 7,
             Color = "Trắng",
@@ -84,7 +81,6 @@ public static class SeedVehicles
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f3",
             LicensePlate = "68E-010.68",
-            VehicleCode = "RG7004",
             Brand = "Vinfast VFe34",
             SeatCount = 4,
             Color = "Xanh",
@@ -101,7 +97,6 @@ public static class SeedVehicles
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f4",
             LicensePlate = "68F-009.10",
-            VehicleCode = "AG6123",
             Brand = "Vinfast Lime",
             SeatCount = 7,
             Color = "Vàng",
@@ -118,7 +113,6 @@ public static class SeedVehicles
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f6",
             LicensePlate = "68G-000.75",
-            VehicleCode = "AG6116",
             Brand = "Vinfast VF6",
             SeatCount = 5,
             Color = "Xanh",
@@ -135,7 +129,6 @@ public static class SeedVehicles
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f7",
             LicensePlate = "68E-011.85",
-            VehicleCode = "AG6124",
             Brand = "Vinfast VF5",
             SeatCount = 4,
             Color = "Xanh",

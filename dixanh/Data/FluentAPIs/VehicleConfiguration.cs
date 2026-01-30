@@ -1,6 +1,7 @@
 ﻿using dixanh.Libraries.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.Reflection.Emit;
 
 namespace dixanh.Data.FluentAPIs;
 
@@ -16,7 +17,6 @@ public sealed class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
 
         b.HasIndex(x => x.LicensePlate).IsUnique();
         b.HasIndex(x => new { x.StatusId, x.CreatedAt });
-        b.HasIndex(x => x.VehicleCode);
 
         // Vehicle -> VehicleStatus (no cascade)
         b.HasOne(x => x.Status)
