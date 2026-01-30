@@ -60,11 +60,6 @@
                                 </div>
 
                                 <div>
-                                    <label class="text-sm font-medium text-slate-700">Số hiệu xe</label>
-                                    <InputText class="@UiInput" @bind-Value="_model.VehicleCode" disabled="@IsReadOnly" />
-                                </div>
-
-                                <div>
                                     <label class="text-sm font-medium text-slate-700">Thương hiệu</label>
                                     <InputText class="@UiInput" @bind-Value="_model.Brand" disabled="@IsReadOnly" />
                                 </div>
@@ -291,7 +286,6 @@
                 var dto = new VehicleCreateDto
                 {
                     LicensePlate = _model.LicensePlate,
-                    VehicleCode = _model.VehicleCode,
                     Brand = _model.Brand,
                     SeatCount = _model.SeatCount,
                     Color = _model.Color,
@@ -311,7 +305,6 @@
                 {
                     VehicleId = _model.VehicleId,
                     LicensePlate = _model.LicensePlate,
-                    VehicleCode = _model.VehicleCode,
                     Brand = _model.Brand,
                     SeatCount = _model.SeatCount,
                     Color = _model.Color,

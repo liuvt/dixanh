@@ -445,11 +445,6 @@ namespace dixanh.Data.Migrations
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("VehicleCode")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
                     b.Property<string>("VehicleType")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -459,8 +454,6 @@ namespace dixanh.Data.Migrations
 
                     b.HasIndex("LicensePlate")
                         .IsUnique();
-
-                    b.HasIndex("VehicleCode");
 
                     b.HasIndex("StatusId", "CreatedAt");
 

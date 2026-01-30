@@ -12,7 +12,7 @@ using dixanh.Data;
 namespace dixanh.Data.Migrations
 {
     [DbContext(typeof(dixanhDBContext))]
-    [Migration("20260129040214_Init")]
+    [Migration("20260130073833_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -448,11 +448,6 @@ namespace dixanh.Data.Migrations
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("VehicleCode")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
                     b.Property<string>("VehicleType")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -462,8 +457,6 @@ namespace dixanh.Data.Migrations
 
                     b.HasIndex("LicensePlate")
                         .IsUnique();
-
-                    b.HasIndex("VehicleCode");
 
                     b.HasIndex("StatusId", "CreatedAt");
 
@@ -567,7 +560,7 @@ namespace dixanh.Data.Migrations
 
                     b.HasIndex("ToStatusId");
 
-                    b.HasIndex("VehicleId");
+                    b.HasIndex("VehicleId", "ChangedAt");
 
                     b.ToTable("VehicleStatusHistories");
                 });

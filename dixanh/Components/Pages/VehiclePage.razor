@@ -29,13 +29,6 @@
                 </div>
 
                 <div>
-                    <label class="text-sm font-medium text-slate-700">Số hiệu xe</label>
-                    <input class="@UiInput"
-                           placeholder="RG7032"
-                           @bind="_filterVehicleCode" @bind:event="oninput" />
-                </div>
-
-                <div>
                     <label class="text-sm font-medium text-slate-700">Tạo từ (UTC)</label>
                     <input type="datetime-local"
                            step="1"
@@ -94,7 +87,6 @@
                     <tr class="text-left text-slate-600">
                         <th class="px-4 py-3 font-medium">MaXe</th>
                         <th class="px-4 py-3 font-medium">Biển số</th>
-                        <th class="px-4 py-3 font-medium">Số hiệu</th>
                         <th class="px-4 py-3 font-medium">Thương hiệu</th>
                         <th class="px-4 py-3 font-medium">Số chỗ</th>
                         <th class="px-4 py-3 font-medium">Màu</th>
@@ -122,7 +114,6 @@
                             <tr class="hover:bg-slate-50">
                                 <td class="px-4 py-3 text-slate-900">@ShortId(v.VehicleId)</td>
                                 <td class="px-4 py-3">@v.LicensePlate</td>
-                                <td class="px-4 py-3">@v.VehicleCode</td>
                                 <td class="px-4 py-3">@v.Brand</td>
                                 <td class="px-4 py-3">@v.SeatCount</td>
                                 <td class="px-4 py-3">@v.Color</td>

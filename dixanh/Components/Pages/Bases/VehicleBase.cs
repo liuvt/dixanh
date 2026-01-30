@@ -25,7 +25,6 @@ public class VehicleBase : ComponentBase
 
     // filter
     protected string? _filterPlate;
-    protected string? _filterVehicleCode;
     protected string? _filterBrand;
     protected int? _filterStatusId;
     protected DateTime? _createdFromLocal;
@@ -66,10 +65,7 @@ public class VehicleBase : ComponentBase
             page: _page,
             pageSize: _pageSize);
 
-        // filter nhẹ thêm ở client (VehicleCode/Brand) nếu cần tạm thời
-        if (!string.IsNullOrWhiteSpace(_filterVehicleCode))
-            items = items.Where(x => (x.VehicleCode ?? "").Contains(_filterVehicleCode, StringComparison.OrdinalIgnoreCase)).ToList();
-
+        // filter nhẹ thêm ở client (/Brand) nếu cần tạm thời
         if (!string.IsNullOrWhiteSpace(_filterBrand))
             items = items.Where(x => (x.Brand ?? "").Contains(_filterBrand, StringComparison.OrdinalIgnoreCase)).ToList();
 
@@ -81,7 +77,6 @@ public class VehicleBase : ComponentBase
     protected void ResetFilters()
     {
         _filterPlate = null;
-        _filterVehicleCode = null;
         _filterBrand = null;
         _filterStatusId = null;
         _createdFromLocal = null;

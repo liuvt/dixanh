@@ -187,7 +187,6 @@ namespace dixanh.Data.Migrations
                 {
                     VehicleId = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false),
                     LicensePlate = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    VehicleCode = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     Brand = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     SeatCount = table.Column<int>(type: "int", nullable: true),
                     Color = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
@@ -368,11 +367,6 @@ namespace dixanh.Data.Migrations
                 columns: new[] { "StatusId", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Vehicles_VehicleCode",
-                table: "Vehicles",
-                column: "VehicleCode");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_VehicleStatuses_Code",
                 table: "VehicleStatuses",
                 column: "Code",
@@ -394,9 +388,9 @@ namespace dixanh.Data.Migrations
                 column: "ToStatusId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_VehicleStatusHistories_VehicleId",
+                name: "IX_VehicleStatusHistories_VehicleId_ChangedAt",
                 table: "VehicleStatusHistories",
-                column: "VehicleId");
+                columns: new[] { "VehicleId", "ChangedAt" });
         }
 
         /// <inheritdoc />
