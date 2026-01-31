@@ -13,6 +13,7 @@ public partial class dixanhDBContext : IdentityDbContext<AppUser>
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<VehicleStatus> VehicleStatuses => Set<VehicleStatus>();
     public DbSet<VehicleStatusHistory> VehicleStatusHistories => Set<VehicleStatusHistory>();
+    public DbSet<VehicleCodeHistory> VehicleCodeHistorys => Set<VehicleCodeHistory>();
 
     public DbSet<CooperationProfile> CooperationProfiles => Set<CooperationProfile>();
 
@@ -27,6 +28,7 @@ public partial class dixanhDBContext : IdentityDbContext<AppUser>
         modelBuilder.SeedIdentityRoles(); // HasData roles
         modelBuilder.SeedVehicleStatuses(); // HasData vehicle statuses
     }
+
 }
 
 //Update tool: dotnet tool update --global dotnet-ef

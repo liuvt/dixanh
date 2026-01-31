@@ -29,21 +29,10 @@
                 </div>
 
                 <div>
-                    <label class="text-sm font-medium text-slate-700">Tạo từ (UTC)</label>
-                    <input type="datetime-local"
-                           step="1"
-                           class="@($"{UiInput} pr-10")"
-                           @bind-value="_createdFromLocal"
-                           @bind-value:format="yyyy-MM-ddTHH:mm:ss" />
-                </div>
-
-                <div>
-                    <label class="text-sm font-medium text-slate-700">Tạo đến (UTC)</label>
-                    <input type="datetime-local"
-                           step="1"
-                           class="@($"{UiInput} pr-10")"
-                           @bind-value="_createdToLocal"
-                           @bind-value:format="yyyy-MM-ddTHH:mm:ss" />
+                    <label class="text-sm font-medium text-slate-700">Số hiệu xe</label>
+                    <input class="@UiInput"
+                           placeholder="68G-000.01"
+                           @bind="_filtercurrentVehicleCode" @bind:event="oninput" />
                 </div>
 
                 <div>
@@ -63,6 +52,26 @@
                            placeholder="Vinfast VF5"
                            @bind="_filterBrand" @bind:event="oninput" />
                 </div>
+
+                <div>
+                    <label class="text-sm font-medium text-slate-700">Tạo từ (UTC)</label>
+                    <input type="datetime-local"
+                           step="1"
+                           class="@($"{UiInput} pr-10")"
+                           @bind-value="_createdFromLocal"
+                           @bind-value:format="yyyy-MM-ddTHH:mm:ss" />
+                </div>
+
+                <div>
+                    <label class="text-sm font-medium text-slate-700">Tạo đến (UTC)</label>
+                    <input type="datetime-local"
+                           step="1"
+                           class="@($"{UiInput} pr-10")"
+                           @bind-value="_createdToLocal"
+                           @bind-value:format="yyyy-MM-ddTHH:mm:ss" />
+                </div>
+
+
 
             </div>
 
@@ -87,6 +96,7 @@
                     <tr class="text-left text-slate-600">
                         <th class="px-4 py-3 font-medium">MaXe</th>
                         <th class="px-4 py-3 font-medium">Biển số</th>
+                        <th class="px-4 py-3 font-medium">Số hiệu xe</th>
                         <th class="px-4 py-3 font-medium">Thương hiệu</th>
                         <th class="px-4 py-3 font-medium">Số chỗ</th>
                         <th class="px-4 py-3 font-medium">Màu</th>
@@ -114,6 +124,7 @@
                             <tr class="hover:bg-slate-50">
                                 <td class="px-4 py-3 text-slate-900">@ShortId(v.VehicleId)</td>
                                 <td class="px-4 py-3">@v.LicensePlate</td>
+                                <td class="px-4 py-3">@v.CurrentVehicleCode</td>
                                 <td class="px-4 py-3">@v.Brand</td>
                                 <td class="px-4 py-3">@v.SeatCount</td>
                                 <td class="px-4 py-3">@v.Color</td>
@@ -186,12 +197,12 @@
 
 
     //Thiết kế UI Tailwind CSS
-    private string UiInput   => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
-    private string UiSelect  => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
+    private string UiInput => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
+    private string UiSelect => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
 
-    private string UiBtnBase     => "inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-emerald-500/20";
-    private string UiBtnOutline  => $"{UiBtnBase} min-w-[120px] border border-slate-300 bg-white text-slate-700 hover:bg-slate-50";
-    private string UiBtnPrimary  => $"{UiBtnBase} min-w-[120px] border border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700";
+    private string UiBtnBase => "inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-emerald-500/20";
+    private string UiBtnOutline => $"{UiBtnBase} min-w-[120px] border border-slate-300 bg-white text-slate-700 hover:bg-slate-50";
+    private string UiBtnPrimary => $"{UiBtnBase} min-w-[120px] border border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700";
 
-    private string UiBtnSm       => "inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50";
+    private string UiBtnSm => "inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50";
 }

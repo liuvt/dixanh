@@ -138,6 +138,7 @@ builder.Services.AddScoped<IAuthServer, AuthServer>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IVehicleStatusService, VehicleStatusService>();
 builder.Services.AddScoped<IVehicleStatusHistoryService, VehicleStatusHistoryService>();
+builder.Services.AddScoped<IVehicleCodeHistoryService, VehicleCodeHistoryService>();
 #endregion
 
 #region Font-end Register services

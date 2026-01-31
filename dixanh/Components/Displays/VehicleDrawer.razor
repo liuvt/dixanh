@@ -8,7 +8,6 @@
 @if (Open)
 {
     <div class="fixed inset-0 z-40">
-        <!--Click ra ngoài overlay thoát <div class="absolute inset-0 bg-black/30" @onclick="Close"></div>-->
         <div class="absolute inset-0 bg-black/30"></div>
 
         <div class="absolute top-0 right-0 h-full w-full max-w-2xl bg-white shadow-xl">
@@ -23,6 +22,10 @@
             <div class="border-b border-slate-200 px-4">
                 <div class="flex gap-3 text-sm">
                     <button class="@TabClass("info")" @onclick="@(() => SelectTab("info"))">Thông tin</button>
+
+                    <!-- Tab đổi số hiệu: KHÔNG cho create -->
+                    <button class="@TabClass("code")" @onclick="@(() => SelectTab("code"))" disabled="@(_modeIsCreate)">Số hiệu xe</button>
+
                     <button class="@TabClass("status")" @onclick="@(() => SelectTab("status"))" disabled="@(_modeIsCreate)">Trạng thái</button>
                     <button class="@TabClass("history")" @onclick="@(() => SelectTab("history"))" disabled="@(_modeIsCreate)">Lịch sử</button>
                 </div>
@@ -49,9 +52,50 @@
                             <ValidationSummary />
 
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+
                                 <div class="md:col-span-2">
                                     <label class="text-sm font-medium text-slate-700">VehicleId</label>
                                     <input class="@UiInput" value="@_model.VehicleId" disabled />
+                                </div>
+
+                                <!-- CREATE: cho nhập số tài + khu vực; EDIT/VIEW: hiển thị readonly -->
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700">Số hiệu xe (Số tài)</label>
+                                    <input class="@UiInput"
+                                           placeholder="VD: 0123"
+                                           @bind="_createVehicleCode"
+                                           @bind:event="oninput"
+                                           disabled="@(!_modeIsCreate)" />
+                                    @if (_modeIsCreate)
+                                    {
+                                        <div class="mt-1 text-xs text-slate-500">
+                                            Nếu có nhập Số hiệu xe thì bắt buộc chọn Khu vực.
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="mt-1 text-xs text-slate-500">
+                                            Đổi số hiệu xe: vào tab <b>Số hiệu xe</b>.
+                                        </div>
+                                    }
+                                </div>
+
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700">Khu vực</label>
+                                    <select class="@UiSelect" @bind="_createOperatingArea" disabled="@(!_modeIsCreate)">
+                                        <option value="">-- Chọn khu vực --</option>
+                                        @foreach (var a in _operatingAreas)
+                                        {
+                                            <option value="@a">@a</option>
+                                        }
+                                    </select>
+
+                                    @if (_modeIsCreate && !string.IsNullOrWhiteSpace(_createVehicleCode) && string.IsNullOrWhiteSpace(_createOperatingArea))
+                                    {
+                                        <div class="mt-1 text-xs text-rose-600">
+                                            Bạn đã nhập Số hiệu xe nhưng chưa chọn Khu vực.
+                                        </div>
+                                    }
                                 </div>
 
                                 <div>
@@ -93,15 +137,77 @@
                                     <label class="text-sm font-medium text-slate-700">Số máy</label>
                                     <InputText class="@UiInput" @bind-Value="_model.EngineNumber" disabled="@IsReadOnly" />
                                 </div>
+
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700">Trạng thái</label>
+                                    <select class="@UiSelect" @bind="_model.StatusId" disabled="@IsReadOnly">
+                                        @foreach (var s in _statuses)
+                                        {
+                                            <option value="@s.StatusId">@s.Name</option>
+                                        }
+                                    </select>
+                                </div>
                             </div>
 
                             <div class="mt-5 flex justify-end gap-2">
                                 @if (!IsReadOnly)
                                 {
-                                    <button type="submit" class="@UiBtnPrimary" disabled="@_saving">Lưu lại</button>
+                                    <button type="submit"
+                                            class="@UiBtnPrimary"
+                                            disabled="@_saving || (_modeIsCreate && !CanSubmitCreate)">
+                                        Lưu lại
+                                    </button>
                                 }
                             </div>
                         </EditForm>
+                    }
+
+                    @if (_tab == "code")
+                    {
+                        <div class="rounded-xl border border-slate-200 p-4">
+                            <div class="text-sm text-slate-500">Số hiệu xe hiện tại</div>
+                            <div class="mt-1 text-lg font-semibold text-slate-900">@(_model.CurrentVehicleCode ?? "")</div>
+
+                            <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700">Khu vực</label>
+                                    <select class="@UiSelect" @bind="_codeOperatingArea" disabled="@IsReadOnly">
+                                        <option value="">-- Chọn khu vực --</option>
+                                        @foreach (var a in _operatingAreas)
+                                        {
+                                            <option value="@a">@a</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700">Số hiệu xe mới</label>
+                                    <input class="@UiInput" placeholder="VD: 0123"
+                                           @bind="_codeVehicleCode" @bind:event="oninput"
+                                           disabled="@IsReadOnly" />
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <label class="text-sm font-medium text-slate-700">Lý do</label>
+                                    <input class="@UiInput" placeholder="VD: chuyển đội / đổi khu vực..."
+                                           @bind="_codeReason" @bind:event="oninput"
+                                           disabled="@IsReadOnly" />
+                                </div>
+                            </div>
+
+                            <div class="mt-4 flex justify-end gap-2">
+                                <button class="@UiBtnPrimary" @onclick="ChangeVehicleCodeAsync" disabled="@_saving || IsReadOnly || !CanSubmitChangeCode">
+                                    Đổi số hiệu
+                                </button>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(_codeHint))
+                            {
+                                <div class="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                                    @_codeHint
+                                </div>
+                            }
+                        </div>
                     }
 
                     @if (_tab == "status")
@@ -113,7 +219,7 @@
                             <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Chuyển sang</label>
-                                    <select class="@UiSelect" @bind="_toStatusId">
+                                    <select class="@UiSelect" @bind="_toStatusId" disabled="@IsReadOnly">
                                         @foreach (var s in _statuses)
                                         {
                                             <option value="@s.StatusId">@s.Name</option>
@@ -123,14 +229,14 @@
 
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Ghi chú</label>
-                                    <input class="@UiInput" placeholder="Lý do đổi trạng thái..." @bind="_statusNote" />
+                                    <input class="@UiInput" placeholder="Lý do đổi trạng thái..." @bind="_statusNote" disabled="@IsReadOnly" />
                                 </div>
                             </div>
 
                             <div class="mt-4 flex flex-wrap justify-end gap-2">
-                                <button class="@UiBtnOutline" @onclick="SoftDeleteAsync" disabled="@_saving">Ngừng hoạt động</button>
-                                <button class="@UiBtnOutline" @onclick="RestoreAsync" disabled="@_saving">Khôi phục</button>
-                                <button class="@UiBtnPrimary" @onclick="ChangeStatusAsync" disabled="@_saving">Áp dụng</button>
+                                <button class="@UiBtnOutline" @onclick="SoftDeleteAsync" disabled="@_saving || IsReadOnly">Ngừng hoạt động</button>
+                                <button class="@UiBtnOutline" @onclick="RestoreAsync" disabled="@_saving || IsReadOnly">Khôi phục</button>
+                                <button class="@UiBtnPrimary" @onclick="ChangeStatusAsync" disabled="@_saving || IsReadOnly">Áp dụng</button>
                             </div>
                         </div>
                     }
@@ -207,6 +313,35 @@
     private string _currentStatusName = "";
     private List<VehicleStatusHistory> _history = new();
 
+    // --- CREATE inputs (code + area) ---
+    private string? _createVehicleCode;
+    private string? _createOperatingArea;
+
+    // --- CHANGE CODE tab ---
+    private string? _codeOperatingArea;
+    private string? _codeVehicleCode;
+    private string? _codeReason;
+    private string? _codeHint;
+
+    // danh sách khu vực (cứng, bạn thay bằng config/service sau)
+    private readonly List<string> _operatingAreas = new() { "RG", "PQ", "CT", "ST", "HG", "CM", "AG", "BL", "VL" };
+
+    private bool CanSubmitCreate
+    {
+        get
+        {
+            // nếu có nhập số hiệu xe lúc create => bắt buộc có khu vực
+            if (!string.IsNullOrWhiteSpace(_createVehicleCode))
+                return !string.IsNullOrWhiteSpace(_createOperatingArea);
+
+            return true;
+        }
+    }
+
+    private bool CanSubmitChangeCode =>
+        !string.IsNullOrWhiteSpace(_codeOperatingArea) &&
+        !string.IsNullOrWhiteSpace(_codeVehicleCode);
+
     private string Title => Mode switch
     {
         "create" => "Tạo mới xe",
@@ -221,24 +356,34 @@
 
         _error = null;
         _loading = true;
+        _codeHint = null;
 
         try
         {
             _statuses = await VehicleStatusService.GetAllAsync(onlyActive: true);
-
             _tab = Mode == "history" ? "history" : "info";
 
-            if (Mode == "create")
+            if (_modeIsCreate)
             {
                 _model = new Vehicle
                 {
                     VehicleId = Guid.NewGuid().ToString(),
                     StatusId = _statuses.FirstOrDefault()?.StatusId ?? 1
                 };
+
                 _toStatusId = _model.StatusId;
                 _currentStatusName = _statuses.FirstOrDefault(x => x.StatusId == _model.StatusId)?.Name ?? "";
                 _manufactureDateLocal = null;
                 _history = new();
+
+                // reset create fields
+                _createVehicleCode = "";
+                _createOperatingArea = "";
+
+                // reset change-code fields
+                _codeOperatingArea = "";
+                _codeVehicleCode = "";
+                _codeReason = "";
             }
             else
             {
@@ -248,11 +393,17 @@
                     _model = v ?? new Vehicle { VehicleId = VehicleId };
 
                     _toStatusId = _model.StatusId;
-                    _currentStatusName = _model.Status?.Name ?? _statuses.FirstOrDefault(x => x.StatusId == _model.StatusId)?.Name ?? "";
+                    _currentStatusName = _model.Status?.Name
+                        ?? _statuses.FirstOrDefault(x => x.StatusId == _model.StatusId)?.Name
+                        ?? "";
 
                     _manufactureDateLocal = _model.ManufactureDate?.UtcDateTime.Date;
-
                     _history = await VehicleStatusHistoryService.GetByVehicleAsync(_model.VehicleId, take: 200);
+
+                    // change-code default
+                    _codeVehicleCode = "";
+                    _codeReason = "";
+                    _codeOperatingArea ??= ""; // user chọn
                 }
             }
         }
@@ -260,7 +411,16 @@
         finally { _loading = false; }
     }
 
-    private void SelectTab(string tab) => _tab = tab;
+    private void SelectTab(string tab)
+    {
+        _tab = tab;
+        _error = null;
+
+        if (tab == "code")
+        {
+            _codeHint = "Quy trình: chọn Khu vực + nhập Số hiệu mới => hệ thống tự ghi lịch sử và cập nhật CurrentVehicleCode.";
+        }
+    }
 
     private string TabClass(string tab)
         => "px-3 py-3 border-b-2 " + (tab == _tab
@@ -281,10 +441,16 @@
                 ? new DateTimeOffset(DateTime.SpecifyKind(_manufactureDateLocal.Value.Date, DateTimeKind.Utc))
                 : null;
 
-            if (Mode == "create")
+            if (_modeIsCreate)
             {
+                if (!CanSubmitCreate)
+                    throw new InvalidOperationException("Bạn đã nhập Số hiệu xe nhưng chưa chọn Khu vực.");
+
                 var dto = new VehicleCreateDto
                 {
+                    OperatingArea = string.IsNullOrWhiteSpace(_createOperatingArea) ? null : _createOperatingArea,
+                    CurrentVehicleCode = string.IsNullOrWhiteSpace(_createVehicleCode) ? null : _createVehicleCode,
+
                     LicensePlate = _model.LicensePlate,
                     Brand = _model.Brand,
                     SeatCount = _model.SeatCount,
@@ -301,6 +467,7 @@
             }
             else
             {
+                // EDIT: không cho sửa CurrentVehicleCode tại đây (đổi số hiệu phải qua tab code)
                 var dto = new VehicleUpdateDto
                 {
                     VehicleId = _model.VehicleId,
@@ -318,12 +485,7 @@
                 await VehicleService.UpdateAsync(dto, CurrentUserName);
             }
 
-            // reload model + history
-            var v = await VehicleService.GetAsync(_model.VehicleId);
-            if (v is not null) _model = v;
-
-            _currentStatusName = _model.Status?.Name ?? _statuses.FirstOrDefault(x => x.StatusId == _model.StatusId)?.Name ?? "";
-            _history = await VehicleStatusHistoryService.GetByVehicleAsync(_model.VehicleId, 200);
+            await ReloadModelAndHistoryAsync();
 
             await OnSaved.InvokeAsync();
             await Close();
@@ -332,8 +494,55 @@
         finally { _saving = false; }
     }
 
+    private async Task ChangeVehicleCodeAsync()
+    {
+        if (IsReadOnly) return;
+        if (string.IsNullOrWhiteSpace(_model.VehicleId)) return;
+
+        _error = null;
+        _saving = true;
+
+        try
+        {
+            if (!CanSubmitChangeCode)
+                throw new InvalidOperationException("Vui lòng chọn Khu vực và nhập Số hiệu xe mới.");
+
+            var dto = new VehicleCodeChangeDto
+            {
+                VehicleId = _model.VehicleId,
+                OperatingArea = _codeOperatingArea!,
+                VehicleCode = _codeVehicleCode!,
+                ChangeReason = _codeReason
+            };
+
+            await VehicleService.ChangeVehicleCodeAsync(dto, CurrentUserName);
+
+            await ReloadModelAndHistoryAsync();
+            await OnSaved.InvokeAsync();
+
+            _codeVehicleCode = "";
+            _codeReason = "";
+            _codeHint = "Đổi số hiệu thành công. Hệ thống đã cập nhật CurrentVehicleCode và ghi lịch sử.";
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _saving = false; }
+    }
+
+    private async Task ReloadModelAndHistoryAsync()
+    {
+        var v = await VehicleService.GetAsync(_model.VehicleId);
+        if (v is not null) _model = v;
+
+        _currentStatusName = _model.Status?.Name
+            ?? _statuses.FirstOrDefault(x => x.StatusId == _model.StatusId)?.Name
+            ?? "";
+
+        _history = await VehicleStatusHistoryService.GetByVehicleAsync(_model.VehicleId, 200);
+    }
+
     private async Task ChangeStatusAsync()
     {
+        if (IsReadOnly) return;
         if (string.IsNullOrWhiteSpace(_model.VehicleId)) return;
 
         _error = null;
@@ -342,13 +551,7 @@
         try
         {
             await VehicleService.ChangeStatusAsync(_model.VehicleId, _toStatusId, CurrentUserName, _statusNote);
-
-            var v = await VehicleService.GetAsync(_model.VehicleId);
-            if (v is not null) _model = v;
-
-            _currentStatusName = _model.Status?.Name ?? _statuses.FirstOrDefault(x => x.StatusId == _model.StatusId)?.Name ?? "";
-            _history = await VehicleStatusHistoryService.GetByVehicleAsync(_model.VehicleId, 200);
-
+            await ReloadModelAndHistoryAsync();
             await OnSaved.InvokeAsync();
         }
         catch (Exception ex) { _error = ex.Message; }
@@ -357,6 +560,7 @@
 
     private async Task SoftDeleteAsync()
     {
+        if (IsReadOnly) return;
         if (string.IsNullOrWhiteSpace(_model.VehicleId)) return;
 
         _error = null;
@@ -365,13 +569,7 @@
         try
         {
             await VehicleService.SoftDeleteAsync(_model.VehicleId, CurrentUserName, "Ngừng hoạt động");
-            var v = await VehicleService.GetAsync(_model.VehicleId);
-            if (v is not null) _model = v;
-
-            _toStatusId = _model.StatusId;
-            _currentStatusName = _model.Status?.Name ?? _statuses.FirstOrDefault(x => x.StatusId == _model.StatusId)?.Name ?? "";
-            _history = await VehicleStatusHistoryService.GetByVehicleAsync(_model.VehicleId, 200);
-
+            await ReloadModelAndHistoryAsync();
             await OnSaved.InvokeAsync();
         }
         catch (Exception ex) { _error = ex.Message; }
@@ -380,6 +578,7 @@
 
     private async Task RestoreAsync()
     {
+        if (IsReadOnly) return;
         if (string.IsNullOrWhiteSpace(_model.VehicleId)) return;
 
         _error = null;
@@ -388,25 +587,16 @@
         try
         {
             await VehicleService.RestoreAsync(_model.VehicleId, CurrentUserName, "Khôi phục hoạt động");
-            var v = await VehicleService.GetAsync(_model.VehicleId);
-            if (v is not null) _model = v;
-
-            _toStatusId = _model.StatusId;
-            _currentStatusName = _model.Status?.Name ?? _statuses.FirstOrDefault(x => x.StatusId == _model.StatusId)?.Name ?? "";
-            _history = await VehicleStatusHistoryService.GetByVehicleAsync(_model.VehicleId, 200);
-
+            await ReloadModelAndHistoryAsync();
             await OnSaved.InvokeAsync();
         }
         catch (Exception ex) { _error = ex.Message; }
         finally { _saving = false; }
     }
 
-    private async Task Close()
-    {
-        await OnClose.InvokeAsync();
-    }
+    private async Task Close() => await OnClose.InvokeAsync();
 
-    // UI Tailwind (giữ giống layout trên)
+    // UI Tailwind
     private string UiInput => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
     private string UiSelect => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
     private string UiBtnBase => "inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-emerald-500/20";

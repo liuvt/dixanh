@@ -24,6 +24,7 @@ public class VehicleBase : ComponentBase
     protected List<VehicleStatus> _statuses = new();
 
     // filter
+    protected string? _filtercurrentVehicleCode;
     protected string? _filterPlate;
     protected string? _filterBrand;
     protected int? _filterStatusId;
@@ -58,6 +59,7 @@ public class VehicleBase : ComponentBase
         // Nếu bạn muốn filter VehicleCode/Brand ở DB: hãy mở rộng VehicleService.SearchAsync theo request (khuyến nghị),
         // hiện tại demo này gọi theo plate/status/time để đảm bảo chạy ngay.
         var (items, total) = await vehicleService.SearchAsync(
+            currentVehicleCode: _filtercurrentVehicleCode,
             plate: _filterPlate,
             statusId: _filterStatusId,
             fromUtc: fromUtc,
@@ -76,6 +78,7 @@ public class VehicleBase : ComponentBase
     }
     protected void ResetFilters()
     {
+        _filtercurrentVehicleCode = null;
         _filterPlate = null;
         _filterBrand = null;
         _filterStatusId = null;

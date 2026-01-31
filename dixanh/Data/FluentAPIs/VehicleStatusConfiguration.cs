@@ -8,12 +8,20 @@ public sealed class VehicleStatusConfiguration : IEntityTypeConfiguration<Vehicl
 {
     public void Configure(EntityTypeBuilder<VehicleStatus> b)
     {
+        b.ToTable("VehicleStatuses");
+
         b.HasKey(x => x.StatusId);
+
+        b.Property(x => x.Code)
+            .HasMaxLength(30)
+            .IsRequired();
+
+        b.Property(x => x.Name)
+            .HasMaxLength(100)
+            .IsRequired();
 
         b.HasIndex(x => x.Code).IsUnique();
         b.HasIndex(x => new { x.IsActive, x.SortOrder });
 
-        b.Property(x => x.Code).HasMaxLength(30);
-        b.Property(x => x.Name).HasMaxLength(100);
     }
 }

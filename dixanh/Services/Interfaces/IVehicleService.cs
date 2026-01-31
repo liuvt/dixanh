@@ -6,6 +6,7 @@ namespace dixanh.Services.Interfaces;
 public interface IVehicleService
 {
     Task<(List<Vehicle> Items, int Total)> SearchAsync(
+        string? currentVehicleCode,
         string? plate,
         int? statusId,
         DateTimeOffset? fromUtc,
@@ -25,4 +26,7 @@ public interface IVehicleService
 
     // Thống kê dashboard
     Task<VehicleDashboardDto> GetDashboardAsync(int monthsBack = 12, int yearsBack = 5, CancellationToken ct = default);
+
+    // Đổi mã xe
+    Task ChangeVehicleCodeAsync(VehicleCodeChangeDto dto, string actor);
 }

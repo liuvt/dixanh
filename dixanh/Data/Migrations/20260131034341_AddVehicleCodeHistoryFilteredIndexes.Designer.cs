@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using dixanh.Data;
 
@@ -11,9 +12,11 @@ using dixanh.Data;
 namespace dixanh.Data.Migrations
 {
     [DbContext(typeof(dixanhDBContext))]
-    partial class dixanhDBContextModelSnapshot : ModelSnapshot
+    [Migration("20260131034341_AddVehicleCodeHistoryFilteredIndexes")]
+    partial class AddVehicleCodeHistoryFilteredIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

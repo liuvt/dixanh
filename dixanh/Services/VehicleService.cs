@@ -3,6 +3,7 @@ using dixanh.Helpers;
 using dixanh.Libraries.Entities;
 using dixanh.Libraries.Models;
 using dixanh.Services.Interfaces;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace dixanh.Services;
@@ -49,6 +50,7 @@ public sealed class VehicleService : IVehicleService
     // Console.WriteLine($"Total vehicles found: {total}");
     // plate: Biển số xe (tìm kiếm chứa)
     public async Task<(List<Vehicle> Items, int Total)> SearchAsync(
+        string? currentVehicleCode,
         string? plate,
         int? statusId,
         DateTimeOffset? fromUtc,
@@ -62,7 +64,10 @@ public sealed class VehicleService : IVehicleService
         await using var db = await _dbFactory.CreateDbContextAsync();
 
         var q = db.Vehicles.AsNoTracking().AsQueryable();
-
+        // filter
+        if (!string.IsNullOrWhiteSpace(currentVehicleCode))
+            q = q.Where(x => x.CurrentVehicleCode.Contains(currentVehicleCode));
+        // filter 
         if (!string.IsNullOrWhiteSpace(plate))
             q = q.Where(x => x.LicensePlate.Contains(plate));
 
@@ -87,78 +92,121 @@ public sealed class VehicleService : IVehicleService
         return (items, total);
     }
 
-    // Tạo mới xe
-    // Ví dụ sử dụng:
-    // var newVehicleId = await vehicleService.CreateAsync(new Vehicle
-    // {
-    //     LicensePlate = "68A-12345",
-    //     VehicleCode = "TX-001",
-    //     Brand = "VinFast",
-    //     SeatCount = 5,
-    //     Color = "Trắng",
-    //     ManufactureDate = new DateTimeOffset(new DateTime(2021, 3, 15)),
-    //     VehicleType = "Taxi điện",
-    //     ChassisNumber = "RLNV5JSE
-    //     EngineNumber = "VFCAFB210
-    // }, "admin-user");
-    // createdBy: người tạo xe (username/mã NV)
     public async Task<Vehicle> CreateAsync(VehicleCreateDto dto, string actor)
     {
         await using var db = await _dbFactory.CreateDbContextAsync();
+        await using var tx = await db.Database.BeginTransactionAsync();
 
-        // 1) validate StatusId tồn tại
-        var statusExists = await db.Set<VehicleStatus>()
-            .AnyAsync(x => x.StatusId == dto.StatusId);
-        if (!statusExists) throw new InvalidOperationException($"StatusId={dto.StatusId} không tồn tại.");
-
-        // 2) validate biển số unique (khuyến nghị thêm unique index)
-        var plate = NormalizePlate(dto.LicensePlate);
-        var plateExists = await db.Vehicles.AnyAsync(x => x.LicensePlate == plate);
-        if (plateExists) throw new InvalidOperationException($"Biển số '{plate}' đã tồn tại.");
-
-        var vehicle = new Vehicle
+        try
         {
-            VehicleId = Guid.NewGuid().ToString(),
-            LicensePlate = plate,
-            Brand = dto.Brand?.Trim() ?? "",
-            SeatCount = dto.SeatCount,
-            Color = dto.Color?.Trim() ?? "",
-            ManufactureDate = dto.ManufactureDate,
-            VehicleType = dto.VehicleType?.Trim() ?? "",
-            ChassisNumber = dto.ChassisNumber?.Trim() ?? "",
-            EngineNumber = dto.EngineNumber?.Trim() ?? "",
-            CreatedBy = actor ?? "",
-            CreatedAt = DateTimeOffset.UtcNow,
-            UpdatedAt = null,
-            StatusId = dto.StatusId
-        };
+            var now = DateTimeOffset.UtcNow;
 
-        // 3) add history INIT
-        var history = new VehicleStatusHistory
+            // 1) validate StatusId tồn tại
+            var statusExists = await db.Set<VehicleStatus>()
+                .AnyAsync(x => x.StatusId == dto.StatusId);
+            if (!statusExists) throw new InvalidOperationException($"StatusId={dto.StatusId} không tồn tại.");
+
+            // 2) validate biển số unique
+            var plate = NormalizePlate(dto.LicensePlate);
+            var plateExists = await db.Vehicles.AnyAsync(x => x.LicensePlate == plate);
+            if (plateExists) throw new InvalidOperationException($"Biển số '{plate}' đã tồn tại.");
+
+            // 3) normalize số tài + khu vực
+            var code = (dto.CurrentVehicleCode ?? "").Trim().ToUpperInvariant();
+            var area = (dto.OperatingArea ?? "").Trim().ToUpperInvariant();
+
+            // 4) nếu có nhập số tài => bắt buộc có khu vực
+            if (!string.IsNullOrWhiteSpace(code) && string.IsNullOrWhiteSpace(area))
+                throw new InvalidOperationException("Bạn đã nhập Số tài nhưng chưa chọn Khu vực (OperatingArea).");
+
+            // 5) check trùng số tài ACTIVE theo khu vực (để báo lỗi đẹp)
+            if (!string.IsNullOrWhiteSpace(code))
+            {
+                var existsActive = await db.Set<VehicleCodeHistory>().AsNoTracking()
+                    .AnyAsync(x => x.OperatingArea == area && x.VehicleCode == code && x.ValidTo == null);
+
+                if (existsActive)
+                    throw new InvalidOperationException($"Số tài '{code}' tại khu vực '{area}' đã được dùng bởi xe khác.");
+            }
+
+            // 6) create Vehicle
+            var vehicle = new Vehicle
+            {
+                VehicleId = Guid.NewGuid().ToString(),
+                CurrentVehicleCode = code, // cache để search nhanh
+                LicensePlate = plate,
+                Brand = dto.Brand?.Trim() ?? "",
+                SeatCount = dto.SeatCount,
+                Color = dto.Color?.Trim() ?? "",
+                ManufactureDate = dto.ManufactureDate,
+                VehicleType = dto.VehicleType?.Trim() ?? "",
+                ChassisNumber = dto.ChassisNumber?.Trim() ?? "",
+                EngineNumber = dto.EngineNumber?.Trim() ?? "",
+                CreatedBy = actor ?? "",
+                CreatedAt = now,
+                UpdatedAt = null,
+                StatusId = dto.StatusId
+            };
+
+            db.Vehicles.Add(vehicle);
+
+            // 7) status history INIT
+            db.Set<VehicleStatusHistory>().Add(new VehicleStatusHistory
+            {
+                VehicleId = vehicle.VehicleId,
+                FromStatusId = null,
+                ToStatusId = dto.StatusId,
+                ChangedAt = now,
+                ChangedBy = actor,
+                Note = "INIT"
+            });
+
+            // 8) code history INIT (active) nếu có số tài
+            if (!string.IsNullOrWhiteSpace(code))
+            {
+                db.Set<VehicleCodeHistory>().Add(new VehicleCodeHistory
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    VehicleId = vehicle.VehicleId,
+                    OperatingArea = area,
+                    VehicleCode = code,
+                    ValidFrom = now,
+                    ValidTo = null,
+                    ChangedAt = now,
+                    ChangedBy = actor,
+                    ChangeReason = "INIT"
+                });
+            }
+
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            return vehicle;
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
-            VehicleId = vehicle.VehicleId,
-            FromStatusId = null,
-            ToStatusId = dto.StatusId,
-            ChangedAt = DateTimeOffset.UtcNow,
-            ChangedBy = actor,
-            Note = "INIT"
-        };
+            await tx.RollbackAsync();
 
-        db.Vehicles.Add(vehicle);
-        db.Set<VehicleStatusHistory>().Add(history);
+            // trường hợp race-condition: 2 người tạo cùng code/area
+            var code = (dto.CurrentVehicleCode ?? "").Trim().ToUpperInvariant();
+            var area = (dto.OperatingArea ?? "").Trim().ToUpperInvariant();
 
-        await db.SaveChangesAsync();
-        return vehicle;
+            if (!string.IsNullOrWhiteSpace(code) && !string.IsNullOrWhiteSpace(area))
+                throw new InvalidOperationException($"Không thể tạo xe: Số tài '{code}' tại khu vực '{area}' đã được dùng.", ex);
+
+            throw;
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task<Vehicle> UpdateAsync(VehicleUpdateDto dto, string actor)
     {
-        // load vehicle
         await using var db = await _dbFactory.CreateDbContextAsync();
-        // validate vehicle tồn tại
-        var vehicle = await db.Vehicles
-            .FirstOrDefaultAsync(x => x.VehicleId == dto.VehicleId);
-        // validate vehicle tồn tại
+
+        var vehicle = await db.Vehicles.FirstOrDefaultAsync(x => x.VehicleId == dto.VehicleId);
         if (vehicle is null) throw new KeyNotFoundException($"Không tìm thấy VehicleId={dto.VehicleId}");
 
         // validate status mới tồn tại
@@ -166,15 +214,17 @@ public sealed class VehicleService : IVehicleService
             .AnyAsync(x => x.StatusId == dto.StatusId);
         if (!statusExists) throw new InvalidOperationException($"StatusId={dto.StatusId} không tồn tại.");
 
-        // validate biển số unique (khuyến nghị thêm unique index)
+        // validate biển số unique
         var plate = NormalizePlate(dto.LicensePlate);
         var plateExists = await db.Vehicles.AnyAsync(x => x.VehicleId != dto.VehicleId && x.LicensePlate == plate);
         if (plateExists) throw new InvalidOperationException($"Biển số '{plate}' đã tồn tại.");
 
+        var now = DateTimeOffset.UtcNow;
+
         // lưu trạng thái cũ để ghi history nếu thay đổi
         var oldStatusId = vehicle.StatusId;
 
-        // cập nhật thông tin
+        // cập nhật thông tin (KHÔNG sửa CurrentVehicleCode tại đây)
         vehicle.LicensePlate = plate;
         vehicle.Brand = dto.Brand?.Trim() ?? "";
         vehicle.SeatCount = dto.SeatCount;
@@ -183,7 +233,7 @@ public sealed class VehicleService : IVehicleService
         vehicle.VehicleType = dto.VehicleType?.Trim() ?? "";
         vehicle.ChassisNumber = dto.ChassisNumber?.Trim() ?? "";
         vehicle.EngineNumber = dto.EngineNumber?.Trim() ?? "";
-        vehicle.UpdatedAt = DateTimeOffset.UtcNow;
+        vehicle.UpdatedAt = now;
 
         // nếu đổi trạng thái thì ghi lịch sử
         if (oldStatusId != dto.StatusId)
@@ -195,7 +245,7 @@ public sealed class VehicleService : IVehicleService
                 VehicleId = vehicle.VehicleId,
                 FromStatusId = oldStatusId,
                 ToStatusId = dto.StatusId,
-                ChangedAt = DateTimeOffset.UtcNow,
+                ChangedAt = now,
                 ChangedBy = actor,
                 Note = "Update vehicle (status changed)"
             });
@@ -336,5 +386,106 @@ public sealed class VehicleService : IVehicleService
         };
     }
 
+    // Đổi mã xe
+    // Luồng nghiệp vụ:
+    // - Kiểm tra DTO hợp lệ
+    // - Bắt đầu transaction
+    // - Lấy xe theo VehicleId
+    // - Lấy record active hiện tại trong VehicleCodeHistory (nếu có)
+    // - Nếu active hiện tại trùng với yêu cầu đổi thì thôi (idempotent)
+    // - Nếu có active cũ thì đóng (set ValidTo)
+    // - Thêm record mới vào VehicleCodeHistory
+    // - Cập nhật CurrentVehicleCode trên Vehicle
+    // - Commit transaction
+    // - Bắt lỗi unique violation từ DB (nếu có) và trả về lỗi dễ hiểu hơn
+    public async Task ChangeVehicleCodeAsync(VehicleCodeChangeDto dto, string actor)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        if (string.IsNullOrWhiteSpace(dto.VehicleId)) throw new ArgumentException("VehicleId rỗng.");
+        if (string.IsNullOrWhiteSpace(dto.OperatingArea)) throw new ArgumentException("OperatingArea rỗng.");
+        if (string.IsNullOrWhiteSpace(dto.VehicleCode)) throw new ArgumentException("VehicleCode rỗng.");
 
+        var vehicleId = dto.VehicleId.Trim();
+        var area = dto.OperatingArea.Trim().ToUpperInvariant();
+        var code = dto.VehicleCode.Trim().ToUpperInvariant();
+        var now = DateTimeOffset.UtcNow;
+
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        await using var tx = await db.Database.BeginTransactionAsync();
+
+        try
+        {
+            var vehicle = await db.Vehicles.FirstOrDefaultAsync(x => x.VehicleId == vehicleId);
+            if (vehicle is null) throw new KeyNotFoundException($"Không tìm thấy VehicleId={vehicleId}");
+
+            // Active record hiện tại (nếu có)
+            var active = await db.Set<VehicleCodeHistory>()
+                .Where(x => x.VehicleId == vehicleId && x.ValidTo == null)
+                .OrderByDescending(x => x.ValidFrom)
+                .FirstOrDefaultAsync();
+
+            // Nếu đang active đúng y như vậy thì thôi (idempotent)
+            if (active != null
+                && string.Equals(active.OperatingArea, area, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(active.VehicleCode, code, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            // Đóng active cũ
+            if (active != null)
+            {
+                active.ValidTo = now;
+                active.ChangedAt = now;
+                active.ChangedBy = actor;
+                active.ChangeReason = string.IsNullOrWhiteSpace(dto.ChangeReason) ? "Đổi số hiệu" : dto.ChangeReason;
+            }
+
+            // Insert active mới
+            db.Set<VehicleCodeHistory>().Add(new VehicleCodeHistory
+            {
+                Id = Guid.NewGuid().ToString(),
+                VehicleId = vehicleId,
+                OperatingArea = area,
+                VehicleCode = code,
+                ValidFrom = now,
+                ValidTo = null,
+                ChangedAt = now,
+                ChangedBy = actor,
+                ChangeReason = dto.ChangeReason
+            });
+
+            // Update số hiệu hiện tại trên Vehicle
+            vehicle.CurrentVehicleCode = code;
+            vehicle.UpdatedAt = now;
+
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            await tx.RollbackAsync();
+            // filtered unique index sẽ đẩy lỗi khi:
+            // - 1 xe có 2 active
+            // - 1 khu vực trùng code active với xe khác
+            throw new InvalidOperationException($"Không thể đổi số hiệu: Số hiệu '{code}' tại khu vực '{area}' đang được dùng bởi xe khác (hoặc xe này đang có 2 số hiệu active).", ex);
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
+    }
+
+    // Kiểm tra lỗi unique constraint/index từ DbUpdateException
+    // Sử dụng hàm này để bắt lỗi unique và trả về lỗi nghiệp vụ dễ hiểu hơn
+    private static bool IsUniqueViolation(DbUpdateException ex)
+    {
+        // SQL Server unique constraint/index: 2601, 2627
+        var sqlEx = ex.InnerException as SqlException
+                    ?? ex.GetBaseException() as SqlException;
+
+        if (sqlEx == null) return false;
+        return sqlEx.Number is 2601 or 2627;
+    }
 }
