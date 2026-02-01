@@ -32,6 +32,7 @@ public static class SeedVehicles
         new Vehicle
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f5",
+            CurrentVehicleCode = "BL3030",
             LicensePlate = "68G-000.45",
             Brand = "Vinfast VF5",
             SeatCount = 4,
@@ -48,6 +49,7 @@ public static class SeedVehicles
         new Vehicle
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f1",
+            CurrentVehicleCode = "BL3031",
             LicensePlate = "68G-000.01",
             Brand = "Vinfast VFe34",
             SeatCount = 4,
@@ -64,6 +66,7 @@ public static class SeedVehicles
         new Vehicle
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f2",
+            CurrentVehicleCode = "BL3032",
             LicensePlate = "68F-009.35",
             Brand = "Vinfast Lime",
             SeatCount = 7,
@@ -80,6 +83,7 @@ public static class SeedVehicles
         new Vehicle
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f3",
+            CurrentVehicleCode = "VL1011",
             LicensePlate = "68E-010.68",
             Brand = "Vinfast VFe34",
             SeatCount = 4,
@@ -96,6 +100,7 @@ public static class SeedVehicles
         new Vehicle
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f4",
+            CurrentVehicleCode = "VL1013",
             LicensePlate = "68F-009.10",
             Brand = "Vinfast Lime",
             SeatCount = 7,
@@ -112,6 +117,7 @@ public static class SeedVehicles
         new Vehicle
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f6",
+            CurrentVehicleCode = "VL1015",
             LicensePlate = "68G-000.75",
             Brand = "Vinfast VF6",
             SeatCount = 5,
@@ -128,6 +134,7 @@ public static class SeedVehicles
         new Vehicle
         {
             VehicleId = "77daf2429c1aafb52ad7568f8f2558f7",
+            CurrentVehicleCode = "RG7012",
             LicensePlate = "68E-011.85",
             Brand = "Vinfast VF5",
             SeatCount = 4,

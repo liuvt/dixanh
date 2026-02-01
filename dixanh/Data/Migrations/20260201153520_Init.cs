@@ -186,6 +186,7 @@ namespace dixanh.Data.Migrations
                 columns: table => new
                 {
                     VehicleId = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false),
+                    CurrentVehicleCode = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     LicensePlate = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Brand = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     SeatCount = table.Column<int>(type: "int", nullable: true),
@@ -251,6 +252,31 @@ namespace dixanh.Data.Migrations
                         principalTable: "Vehicles",
                         principalColumn: "VehicleId",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "VehicleCodeHistories",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false),
+                    VehicleId = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false),
+                    VehicleCode = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    OperatingArea = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    ValidFrom = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    ValidTo = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ChangeReason = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    ChangedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    ChangedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VehicleCodeHistories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_VehicleCodeHistories_Vehicles_VehicleId",
+                        column: x => x.VehicleId,
+                        principalTable: "Vehicles",
+                        principalColumn: "VehicleId",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -356,10 +382,39 @@ namespace dixanh.Data.Migrations
                 column: "VehicleId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_VehicleCodeHistories_VehicleId",
+                table: "VehicleCodeHistories",
+                column: "VehicleId",
+                unique: true,
+                filter: "[ValidTo] IS NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_VehicleCodeHistories_ActiveCodePerArea",
+                table: "VehicleCodeHistories",
+                columns: new[] { "OperatingArea", "VehicleCode" },
+                unique: true,
+                filter: "[ValidTo] IS NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Vehicles_CreatedAt",
+                table: "Vehicles",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Vehicles_CurrentVehicleCode",
+                table: "Vehicles",
+                column: "CurrentVehicleCode");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Vehicles_LicensePlate",
                 table: "Vehicles",
                 column: "LicensePlate",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Vehicles_StatusId",
+                table: "Vehicles",
+                column: "StatusId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Vehicles_StatusId_CreatedAt",
@@ -413,6 +468,9 @@ namespace dixanh.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "CooperationProfiles");
+
+            migrationBuilder.DropTable(
+                name: "VehicleCodeHistories");
 
             migrationBuilder.DropTable(
                 name: "VehicleStatusHistories");

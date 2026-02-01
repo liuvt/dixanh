@@ -78,6 +78,5 @@ public sealed class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
             .OnDelete(DeleteBehavior.Restrict);
 
         // CooperationProfiles bạn đang dùng rồi: nếu muốn chốt FK theo VehicleId thì config ở CooperationProfileConfiguration
-
     }
 }

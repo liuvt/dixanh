@@ -19,7 +19,7 @@
                     Quản lý danh mục trạng thái (Code không chỉnh sửa sau khi tạo).
                 </div>
 
-                <button class="@UiBtnOutline" @onclick="ReloadAsync" disabled="@_loading">Reload</button>
+                <button class="@_TVTTemplate.UiBtnOutline" @onclick="ReloadAsync" disabled="@_loading">Reload</button>
             </div>
 
             @if (!string.IsNullOrWhiteSpace(_error))
@@ -54,12 +54,12 @@
                         <tr class="bg-white">
                             <td class="px-4 py-3 text-slate-500">New</td>
                             <td class="px-4 py-3">
-                                <input class="@UiInput"
+                                <input class="@_TVTTemplate.UiInput"
                                        placeholder="ACTIVE"
                                        @bind="_newCode" @bind:event="oninput" />
                             </td>
                             <td class="px-4 py-3">
-                                <input class="@UiInput"
+                                <input class="@_TVTTemplate.UiInput"
                                        placeholder="Hoạt động"
                                        @bind="_newName" @bind:event="oninput" />
                             </td>
@@ -67,11 +67,11 @@
                                 <input type="checkbox" class="h-4 w-4" @bind="_newIsActive" />
                             </td>
                             <td class="px-4 py-3">
-                                <input type="number" class="@UiInput w-24"
+                                <input type="number" class="@_TVTTemplate.UiInput w-24"
                                        @bind="_newSortOrder" />
                             </td>
                             <td class="px-4 py-3">
-                                <button class="@UiBtnPrimary"
+                                <button class="@_TVTTemplate.UiBtnPrimary"
                                         @onclick="CreateAsync"
                                         disabled="@_saving">
                                     + Tạo
@@ -95,21 +95,21 @@
                                 <tr class="hover:bg-slate-50">
                                     <td class="px-4 py-3">@s.StatusId</td>
                                     <td class="px-4 py-3">
-                                        <input class="@UiInput"
+                                        <input class="@_TVTTemplate.UiInput"
                                                value="@s.Code" disabled />
                                     </td>
                                     <td class="px-4 py-3">
-                                        <input class="@UiInput"
+                                        <input class="@_TVTTemplate.UiInput"
                                                @bind="s.Name" />
                                     </td>
                                     <td class="px-4 py-3">
                                         <input type="checkbox" class="h-4 w-4" @bind="s.IsActive" />
                                     </td>
                                     <td class="px-4 py-3">
-                                        <input type="number" class="@UiInput w-24" @bind="s.SortOrder" />
+                                        <input type="number" class="@_TVTTemplate.UiInput w-24" @bind="s.SortOrder" />
                                     </td>
                                     <td class="px-4 py-3">
-                                        <button class="@UiBtnPrimary"
+                                        <button class="@_TVTTemplate.UiBtnPrimary"
                                                 @onclick="() => SaveAsync(s)"
                                                 disabled="@_saving">
                                             Lưu
@@ -179,10 +179,4 @@
         catch (Exception ex) { _error = ex.Message; }
         finally { _saving = false; }
     }
-
-    // UI Tailwind (giữ giống layout trên)
-    private string UiInput => "h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
-    private string UiBtnBase => "inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-emerald-500/20";
-    private string UiBtnOutline => $"{UiBtnBase} border border-slate-300 bg-white text-slate-700 hover:bg-slate-50";
-    private string UiBtnPrimary => $"{UiBtnBase} border border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700";
-}
+ }

@@ -12,8 +12,8 @@ using dixanh.Data;
 namespace dixanh.Data.Migrations
 {
     [DbContext(typeof(dixanhDBContext))]
-    [Migration("20260131034341_AddVehicleCodeHistoryFilteredIndexes")]
-    partial class AddVehicleCodeHistoryFilteredIndexes
+    [Migration("20260201153520_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

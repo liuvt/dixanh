@@ -1,36 +1,54 @@
-﻿@using dixanh.Libraries.Models
+﻿@using System.ComponentModel.DataAnnotations
+@using dixanh.Libraries.Models
 @using dixanh.Services.Interfaces
+@using dixanh.Components.Layout
+
 @inject IVehicleService VehicleService
 @inject IVehicleStatusService VehicleStatusService
 @inject IVehicleStatusHistoryService VehicleStatusHistoryService
+@inject IVehicleCodeHistoryService VehicleCodeHistoryService
+
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @if (Open)
 {
     <div class="fixed inset-0 z-40">
-        <div class="absolute inset-0 bg-black/30"></div>
+        <!-- overlay -->
+        <div class="absolute inset-0 bg-black/30" @onclick="Close"></div>
 
+        <!-- panel -->
         <div class="absolute top-0 right-0 h-full w-full max-w-2xl bg-white shadow-xl">
+            <!-- Header -->
             <div class="flex items-center justify-between border-b border-slate-200 p-4">
                 <div>
                     <div class="text-sm text-slate-500">Vehicle</div>
                     <div class="text-lg font-semibold text-slate-900">@Title</div>
                 </div>
-                <button class="@UiBtnOutline" @onclick="Close">Thoát</button>
+                <button type="button" class="@_TVTTemplate.UiBtnOutline" @onclick="Close">Thoát</button>
             </div>
 
+            <!-- Tabs (Option A: XÓA tab history) -->
             <div class="border-b border-slate-200 px-4">
                 <div class="flex gap-3 text-sm">
-                    <button class="@TabClass("info")" @onclick="@(() => SelectTab("info"))">Thông tin</button>
+                    <button type="button" class="@TabClass("info")" @onclick="@(() => SelectTab("info"))">Thông tin</button>
 
-                    <!-- Tab đổi số hiệu: KHÔNG cho create -->
-                    <button class="@TabClass("code")" @onclick="@(() => SelectTab("code"))" disabled="@(_modeIsCreate)">Số hiệu xe</button>
+                    <button type="button"
+                            class="@TabClass("code")"
+                            disabled="@DisableNonInfoTabs"
+                            @onclick="@(() => SelectTab("code"))">
+                        Số hiệu xe
+                    </button>
 
-                    <button class="@TabClass("status")" @onclick="@(() => SelectTab("status"))" disabled="@(_modeIsCreate)">Trạng thái</button>
-                    <button class="@TabClass("history")" @onclick="@(() => SelectTab("history"))" disabled="@(_modeIsCreate)">Lịch sử</button>
+                    <button type="button"
+                            class="@TabClass("status")"
+                            disabled="@DisableNonInfoTabs"
+                            @onclick="@(() => SelectTab("status"))">
+                        Trạng thái
+                    </button>
                 </div>
             </div>
 
+            <!-- Body -->
             <div class="h-[calc(100%-112px)] overflow-auto p-4">
                 @if (_loading)
                 {
@@ -44,134 +62,210 @@
                             @_error
                         </div>
                     }
-
-                    @if (_tab == "info")
+                    @if (!string.IsNullOrWhiteSpace(_success))
                     {
-                        <EditForm Model="_model" OnValidSubmit="SaveInfoAsync">
-                            <DataAnnotationsValidator />
-                            <ValidationSummary />
-
-                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-
-                                <div class="md:col-span-2">
-                                    <label class="text-sm font-medium text-slate-700">VehicleId</label>
-                                    <input class="@UiInput" value="@_model.VehicleId" disabled />
-                                </div>
-
-                                <!-- CREATE: cho nhập số tài + khu vực; EDIT/VIEW: hiển thị readonly -->
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Số hiệu xe (Số tài)</label>
-                                    <input class="@UiInput"
-                                           placeholder="VD: 0123"
-                                           @bind="_createVehicleCode"
-                                           @bind:event="oninput"
-                                           disabled="@(!_modeIsCreate)" />
-                                    @if (_modeIsCreate)
-                                    {
-                                        <div class="mt-1 text-xs text-slate-500">
-                                            Nếu có nhập Số hiệu xe thì bắt buộc chọn Khu vực.
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="mt-1 text-xs text-slate-500">
-                                            Đổi số hiệu xe: vào tab <b>Số hiệu xe</b>.
-                                        </div>
-                                    }
-                                </div>
-
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Khu vực</label>
-                                    <select class="@UiSelect" @bind="_createOperatingArea" disabled="@(!_modeIsCreate)">
-                                        <option value="">-- Chọn khu vực --</option>
-                                        @foreach (var a in _operatingAreas)
-                                        {
-                                            <option value="@a">@a</option>
-                                        }
-                                    </select>
-
-                                    @if (_modeIsCreate && !string.IsNullOrWhiteSpace(_createVehicleCode) && string.IsNullOrWhiteSpace(_createOperatingArea))
-                                    {
-                                        <div class="mt-1 text-xs text-rose-600">
-                                            Bạn đã nhập Số hiệu xe nhưng chưa chọn Khu vực.
-                                        </div>
-                                    }
-                                </div>
-
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Biển số</label>
-                                    <InputText class="@UiInput" @bind-Value="_model.LicensePlate" disabled="@IsReadOnly" />
-                                </div>
-
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Thương hiệu</label>
-                                    <InputText class="@UiInput" @bind-Value="_model.Brand" disabled="@IsReadOnly" />
-                                </div>
-
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Số chỗ</label>
-                                    <InputNumber class="@UiSelect" @bind-Value="_model.SeatCount" disabled="@IsReadOnly" />
-                                </div>
-
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Màu</label>
-                                    <InputText class="@UiInput" @bind-Value="_model.Color" disabled="@IsReadOnly" />
-                                </div>
-
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Ngày SX</label>
-                                    <InputDate class="@UiInput" @bind-Value="_manufactureDateLocal" disabled="@IsReadOnly" />
-                                </div>
-
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Loại xe</label>
-                                    <InputText class="@UiInput" @bind-Value="_model.VehicleType" disabled="@IsReadOnly" />
-                                </div>
-
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Số khung</label>
-                                    <InputText class="@UiInput" @bind-Value="_model.ChassisNumber" disabled="@IsReadOnly" />
-                                </div>
-
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Số máy</label>
-                                    <InputText class="@UiInput" @bind-Value="_model.EngineNumber" disabled="@IsReadOnly" />
-                                </div>
-
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Trạng thái</label>
-                                    <select class="@UiSelect" @bind="_model.StatusId" disabled="@IsReadOnly">
-                                        @foreach (var s in _statuses)
-                                        {
-                                            <option value="@s.StatusId">@s.Name</option>
-                                        }
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="mt-5 flex justify-end gap-2">
-                                @if (!IsReadOnly)
-                                {
-                                    <button type="submit"
-                                            class="@UiBtnPrimary"
-                                            disabled="@_saving || (_modeIsCreate && !CanSubmitCreate)">
-                                        Lưu lại
-                                    </button>
-                                }
-                            </div>
-                        </EditForm>
+                        <div class="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                            @_success
+                        </div>
                     }
 
+                    @* ===================== TAB INFO ===================== *@
+                    @if (_tab == "info")
+                    {
+                        @if (_modeIsCreate)
+                        {
+                            <!-- CREATE: bind VehicleCreateDto để chạy validation chuẩn -->
+                            <EditForm EditContext="_createEditContext"
+                                      OnValidSubmit="SaveCreateAsync"
+                                      OnInvalidSubmit="InvalidSubmit">
+                                <DataAnnotationsValidator />
+                                <ValidationSummary />
+
+                                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div class="md:col-span-2">
+                                        <label class="text-sm font-medium text-slate-700">VehicleId</label>
+                                        <input class="@_TVTTemplate.UiInput" value="@(_model.VehicleId ?? "")" disabled />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Số hiệu xe (Số tài)</label>
+                                        <InputText class="@_TVTTemplate.UiInput"
+                                                   placeholder="VD: 0123"
+                                                   @bind-Value="_create.CurrentVehicleCode" />
+                                        <ValidationMessage For="@(() => _create.CurrentVehicleCode)" />
+                                        <div class="mt-1 text-xs text-slate-500">
+                                            Nếu DB Vehicles.CurrentVehicleCode đang NOT NULL thì tạo mới bắt buộc nhập.
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Khu vực</label>
+                                        <InputSelect class="@_TVTTemplate.UiSelect" @bind-Value="_create.OperatingArea">
+                                            <option value="">-- Chọn khu vực --</option>
+                                            @foreach (var a in _operatingAreas)
+                                            {
+                                                <option value="@a">@a</option>
+                                            }
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => _create.OperatingArea)" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Biển số</label>
+                                        <InputText class="@_TVTTemplate.UiInput"
+                                                   placeholder="68G-000.01"
+                                                   @bind-Value="_create.LicensePlate" />
+                                        <ValidationMessage For="@(() => _create.LicensePlate)" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Thương hiệu</label>
+                                        <InputText class="@_TVTTemplate.UiInput" @bind-Value="_create.Brand" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Số chỗ</label>
+                                        <InputNumber class="@_TVTTemplate.UiSelect" @bind-Value="_create.SeatCount" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Màu</label>
+                                        <InputText class="@_TVTTemplate.UiInput" @bind-Value="_create.Color" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Ngày SX</label>
+                                        <InputDate class="@_TVTTemplate.UiInput" @bind-Value="_manufactureDateLocal" />
+                                        @* Validate() trong dto check future, nó trả về ValidationMessage cho ManufactureDate *@
+                                        <ValidationMessage For="@(() => _create.ManufactureDate)" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Loại xe</label>
+                                        <InputText class="@_TVTTemplate.UiInput" @bind-Value="_create.VehicleType" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Số khung</label>
+                                        <InputText class="@_TVTTemplate.UiInput" @bind-Value="_create.ChassisNumber" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Số máy</label>
+                                        <InputText class="@_TVTTemplate.UiInput" @bind-Value="_create.EngineNumber" />
+                                    </div>
+
+                                    <div class="md:col-span-2">
+                                        <label class="text-sm font-medium text-slate-700">Trạng thái</label>
+                                        <InputSelect class="@_TVTTemplate.UiSelect" @bind-Value="_create.StatusId">
+                                            @foreach (var s in _statuses)
+                                            {
+                                                <option value="@s.StatusId">@s.Name</option>
+                                            }
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => _create.StatusId)" />
+                                    </div>
+                                </div>
+
+                                <div class="mt-5 flex justify-end gap-2">
+                                    <button type="submit" class="@_TVTTemplate.UiBtnPrimary" disabled="@_saving">
+                                        Lưu lại
+                                    </button>
+                                </div>
+                            </EditForm>
+                        }
+                        else
+                        {
+                            <!-- VIEW/EDIT: cùng 1 form, View thì KHÔNG hiển thị nút Lưu -->
+                            <EditForm EditContext="_editEditContext"
+                                      OnValidSubmit="SaveEditAsync"
+                                      OnInvalidSubmit="InvalidSubmit">
+                                <DataAnnotationsValidator />
+                                <ValidationSummary />
+
+                                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div class="md:col-span-2">
+                                        <label class="text-sm font-medium text-slate-700">VehicleId</label>
+                                        <input class="@_TVTTemplate.UiInput" value="@(_model.VehicleId ?? "")" disabled />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Biển số</label>
+                                        <InputText class="@_TVTTemplate.UiInput" @bind-Value="_editVm.LicensePlate" disabled="@IsReadOnly" />
+                                        <ValidationMessage For="@(() => _editVm.LicensePlate)" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Thương hiệu</label>
+                                        <InputText class="@_TVTTemplate.UiInput" @bind-Value="_editVm.Brand" disabled="@IsReadOnly" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Số chỗ</label>
+                                        <InputNumber class="@_TVTTemplate.UiSelect" @bind-Value="_editVm.SeatCount" disabled="@IsReadOnly" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Màu</label>
+                                        <InputText class="@_TVTTemplate.UiInput" @bind-Value="_editVm.Color" disabled="@IsReadOnly" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Ngày SX</label>
+                                        <InputDate class="@_TVTTemplate.UiInput" @bind-Value="_manufactureDateLocal" disabled="@IsReadOnly" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Loại xe</label>
+                                        <InputText class="@_TVTTemplate.UiInput" @bind-Value="_editVm.VehicleType" disabled="@IsReadOnly" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Số khung</label>
+                                        <InputText class="@_TVTTemplate.UiInput" @bind-Value="_editVm.ChassisNumber" disabled="@IsReadOnly" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Số máy</label>
+                                        <InputText class="@_TVTTemplate.UiInput" @bind-Value="_editVm.EngineNumber" disabled="@IsReadOnly" />
+                                    </div>
+
+                                    <div class="md:col-span-2">
+                                        <label class="text-sm font-medium text-slate-700">Trạng thái</label>
+                                        <InputSelect class="@_TVTTemplate.UiSelect" @bind-Value="_editVm.StatusId" disabled="@IsReadOnly">
+                                            @foreach (var s in _statuses)
+                                            {
+                                                <option value="@s.StatusId">@s.Name</option>
+                                            }
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => _editVm.StatusId)" />
+                                    </div>
+                                </div>
+
+                                @* View thì không hiện button (giống yêu cầu của bạn) *@
+                                @if (!IsReadOnly)
+                                {
+                                    <div class="mt-5 flex justify-end gap-2">
+                                        <button type="submit" class="@_TVTTemplate.UiBtnPrimary" disabled="@_saving">
+                                            Lưu lại
+                                        </button>
+                                    </div>
+                                }
+                            </EditForm>
+                        }
+                    }
+
+                    @* ===================== TAB CODE ===================== *@
                     @if (_tab == "code")
                     {
                         <div class="rounded-xl border border-slate-200 p-4">
-                            <div class="text-sm text-slate-500">Số hiệu xe hiện tại</div>
+                            <div class="text-sm text-slate-500">Số hiệu hiện tại</div>
                             <div class="mt-1 text-lg font-semibold text-slate-900">@(_model.CurrentVehicleCode ?? "")</div>
 
                             <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Khu vực</label>
-                                    <select class="@UiSelect" @bind="_codeOperatingArea" disabled="@IsReadOnly">
+                                    <select class="@_TVTTemplate.UiSelect" @bind="_codeOperatingArea" disabled="@IsReadOnly">
                                         <option value="">-- Chọn khu vực --</option>
                                         @foreach (var a in _operatingAreas)
                                         {
@@ -182,36 +276,83 @@
 
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Số hiệu xe mới</label>
-                                    <input class="@UiInput" placeholder="VD: 0123"
-                                           @bind="_codeVehicleCode" @bind:event="oninput"
+                                    <input class="@_TVTTemplate.UiInput"
+                                           placeholder="VD: 0123"
+                                           @bind="_codeVehicleCode"
+                                           @bind:event="oninput"
                                            disabled="@IsReadOnly" />
                                 </div>
 
                                 <div class="md:col-span-2">
                                     <label class="text-sm font-medium text-slate-700">Lý do</label>
-                                    <input class="@UiInput" placeholder="VD: chuyển đội / đổi khu vực..."
-                                           @bind="_codeReason" @bind:event="oninput"
+                                    <input class="@_TVTTemplate.UiInput"
+                                           placeholder="VD: chuyển đội / đổi khu vực..."
+                                           @bind="_codeReason"
+                                           @bind:event="oninput"
                                            disabled="@IsReadOnly" />
                                 </div>
                             </div>
 
-                            <div class="mt-4 flex justify-end gap-2">
-                                <button class="@UiBtnPrimary" @onclick="ChangeVehicleCodeAsync" disabled="@_saving || IsReadOnly || !CanSubmitChangeCode">
-                                    Đổi số hiệu
-                                </button>
-                            </div>
-
-                            @if (!string.IsNullOrWhiteSpace(_codeHint))
+                            @* View thì không hiện button đổi số hiệu *@
+                            @if (!IsReadOnly)
                             {
-                                <div class="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                                    @_codeHint
+                                <div class="mt-4 flex justify-end gap-2">
+                                    <button type="button"
+                                            class="@_TVTTemplate.UiBtnPrimary"
+                                            @onclick="ChangeVehicleCodeAsync"
+                                            disabled="@(_saving || !CanSubmitChangeCode)">
+                                        Đổi số hiệu
+                                    </button>
                                 </div>
                             }
                         </div>
+
+                        <div class="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                            <div class="border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                                Lịch sử số hiệu (mới nhất trước)
+                            </div>
+
+                            <div class="overflow-auto">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-white">
+                                        <tr class="text-left text-slate-600">
+                                            <th class="px-4 py-3 font-medium">ValidFrom</th>
+                                            <th class="px-4 py-3 font-medium">Area</th>
+                                            <th class="px-4 py-3 font-medium">Code</th>
+                                            <th class="px-4 py-3 font-medium">ChangedAt</th>
+                                            <th class="px-4 py-3 font-medium">By</th>
+                                            <th class="px-4 py-3 font-medium">Reason</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200">
+                                        @if (_codeHistory.Count == 0)
+                                        {
+                                            <tr><td class="px-4 py-4 text-slate-600" colspan="6">No code history</td></tr>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var h in _codeHistory)
+                                            {
+                                                <tr class="hover:bg-slate-50">
+                                                    <td class="px-4 py-3">@FormatLocal(h.ValidFrom)</td>
+                                                    <td class="px-4 py-3">@h.OperatingArea</td>
+                                                    <td class="px-4 py-3">@h.VehicleCode</td>
+                                                    <td class="px-4 py-3">@FormatLocal(h.ChangedAt)</td>
+                                                    <td class="px-4 py-3">@h.ChangedBy</td>
+                                                    <td class="px-4 py-3">@h.ChangeReason</td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     }
 
+                    @* ===================== TAB STATUS (form + history ngay bên dưới) ===================== *@
                     @if (_tab == "status")
                     {
+                        <!-- Status form -->
                         <div class="rounded-xl border border-slate-200 p-4">
                             <div class="text-sm text-slate-500">Trạng thái hiện tại</div>
                             <div class="mt-1 text-lg font-semibold text-slate-900">@_currentStatusName</div>
@@ -219,7 +360,7 @@
                             <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Chuyển sang</label>
-                                    <select class="@UiSelect" @bind="_toStatusId" disabled="@IsReadOnly">
+                                    <select class="@_TVTTemplate.UiSelect" @bind="_toStatusId" disabled="@IsReadOnly">
                                         @foreach (var s in _statuses)
                                         {
                                             <option value="@s.StatusId">@s.Name</option>
@@ -229,21 +370,43 @@
 
                                 <div>
                                     <label class="text-sm font-medium text-slate-700">Ghi chú</label>
-                                    <input class="@UiInput" placeholder="Lý do đổi trạng thái..." @bind="_statusNote" disabled="@IsReadOnly" />
+                                    <input class="@_TVTTemplate.UiInput"
+                                           placeholder="Lý do đổi trạng thái..."
+                                           @bind="_statusNote"
+                                           disabled="@IsReadOnly" />
                                 </div>
                             </div>
 
-                            <div class="mt-4 flex flex-wrap justify-end gap-2">
-                                <button class="@UiBtnOutline" @onclick="SoftDeleteAsync" disabled="@_saving || IsReadOnly">Ngừng hoạt động</button>
-                                <button class="@UiBtnOutline" @onclick="RestoreAsync" disabled="@_saving || IsReadOnly">Khôi phục</button>
-                                <button class="@UiBtnPrimary" @onclick="ChangeStatusAsync" disabled="@_saving || IsReadOnly">Áp dụng</button>
-                            </div>
-                        </div>
-                    }
+                            @* View thì không hiển thị nút thay đổi *@
+                            @if (!IsReadOnly)
+                            {
+                                <div class="mt-4 flex flex-wrap justify-end gap-2">
+                                    <button type="button"
+                                            class="@_TVTTemplate.UiBtnOutline"
+                                            @onclick="SoftDeleteAsync"
+                                            disabled="@_saving">
+                                        Ngừng hoạt động
+                                    </button>
 
-                    @if (_tab == "history")
-                    {
-                        <div class="overflow-hidden rounded-xl border border-slate-200">
+                                    <button type="button"
+                                            class="@_TVTTemplate.UiBtnOutline"
+                                            @onclick="RestoreAsync"
+                                            disabled="@_saving">
+                                        Khôi phục
+                                    </button>
+
+                                    <button type="button"
+                                            class="@_TVTTemplate.UiBtnPrimary"
+                                            @onclick="ChangeStatusAsync"
+                                            disabled="@_saving">
+                                        Áp dụng
+                                    </button>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Status history right below -->
+                        <div class="mt-4 overflow-hidden rounded-xl border border-slate-200">
                             <div class="border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
                                 Lịch sử trạng thái (mới nhất trước)
                             </div>
@@ -260,16 +423,16 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-200">
-                                        @if (_history.Count == 0)
+                                        @if (_statusHistory.Count == 0)
                                         {
-                                            <tr><td class="px-4 py-4 text-slate-600" colspan="5">No history</td></tr>
+                                            <tr><td class="px-4 py-4 text-slate-600" colspan="5">No status history</td></tr>
                                         }
                                         else
                                         {
-                                            @foreach (var h in _history)
+                                            @foreach (var h in _statusHistory)
                                             {
                                                 <tr class="hover:bg-slate-50">
-                                                    <td class="px-4 py-3">@h.ChangedAt.ToVnDateTime()</td>
+                                                    <td class="px-4 py-3">@FormatLocal(h.ChangedAt)</td>
                                                     <td class="px-4 py-3">@h.FromStatus?.Name</td>
                                                     <td class="px-4 py-3">@h.ToStatus?.Name</td>
                                                     <td class="px-4 py-3">@h.ChangedBy</td>
@@ -290,7 +453,7 @@
 
 @code {
     [Parameter] public bool Open { get; set; }
-    [Parameter] public string Mode { get; set; } = "view"; // create|view|edit|history
+    [Parameter] public string Mode { get; set; } = "view"; // create|view|edit
     [Parameter] public string? VehicleId { get; set; }
     [Parameter] public string CurrentUserName { get; set; } = "system";
     [Parameter] public EventCallback OnClose { get; set; }
@@ -299,88 +462,89 @@
     private bool _loading;
     private bool _saving;
     private string? _error;
+    private string? _success;
 
     private string _tab = "info";
-    private bool _modeIsCreate => Mode == "create";
-    private bool IsReadOnly => Mode is "view" or "history";
+    private string _effectiveMode = "view";
+    private bool _modeIsCreate => _effectiveMode == "create";
+    private bool IsReadOnly => _effectiveMode == "view"; // VIEW: không cho thao tác
 
-    private Vehicle _model = new() { VehicleId = "" };
+    private Vehicle _model = new();
+
+    // CREATE: bind VehicleCreateDto (validation chuẩn)
+    private VehicleCreateDto _create = new();
+    private EditContext _createEditContext = default!;
+
+    // EDIT/VIEW: VM riêng
+    private VehicleEditVm _editVm = new();
+    private EditContext _editEditContext = default!;
+
+    // date input (date-only)
     private DateTime? _manufactureDateLocal;
 
+    // statuses
     private List<VehicleStatus> _statuses = new();
     private int _toStatusId;
     private string? _statusNote;
     private string _currentStatusName = "";
-    private List<VehicleStatusHistory> _history = new();
 
-    // --- CREATE inputs (code + area) ---
-    private string? _createVehicleCode;
-    private string? _createOperatingArea;
+    // histories
+    private List<VehicleStatusHistory> _statusHistory = new();
+    private List<VehicleCodeHistoryItemDto> _codeHistory = new();
 
-    // --- CHANGE CODE tab ---
+    // change code fields
     private string? _codeOperatingArea;
     private string? _codeVehicleCode;
     private string? _codeReason;
-    private string? _codeHint;
 
-    // danh sách khu vực (cứng, bạn thay bằng config/service sau)
-    private readonly List<string> _operatingAreas = new() { "RG", "PQ", "CT", "ST", "HG", "CM", "AG", "BL", "VL" };
+    private readonly List<string> _operatingAreas = new()
+    { "Rạch Giá", "Phú Quốc", "Cần Thơ", "Sóc Trăng", "Hậu Giang", "Cà Mau", "An Giang", "Bạc Liêu", "Vĩnh Long" };
 
-    private bool CanSubmitCreate
-    {
-        get
-        {
-            // nếu có nhập số hiệu xe lúc create => bắt buộc có khu vực
-            if (!string.IsNullOrWhiteSpace(_createVehicleCode))
-                return !string.IsNullOrWhiteSpace(_createOperatingArea);
-
-            return true;
-        }
-    }
-
-    private bool CanSubmitChangeCode =>
-        !string.IsNullOrWhiteSpace(_codeOperatingArea) &&
-        !string.IsNullOrWhiteSpace(_codeVehicleCode);
-
-    private string Title => Mode switch
+    private string Title => _effectiveMode switch
     {
         "create" => "Tạo mới xe",
         "edit" => "Cập nhật xe",
-        "history" => "Lịch sử xe",
         _ => "Xem xe"
     };
+
+    private bool DisableNonInfoTabs => _modeIsCreate || string.IsNullOrWhiteSpace(_model.VehicleId);
+    private bool CanSubmitChangeCode => !string.IsNullOrWhiteSpace(_codeOperatingArea) && !string.IsNullOrWhiteSpace(_codeVehicleCode);
 
     protected override async Task OnParametersSetAsync()
     {
         if (!Open) return;
 
         _error = null;
+        _success = null;
         _loading = true;
-        _codeHint = null;
 
         try
         {
+            _effectiveMode = (Mode ?? "view").Trim().ToLowerInvariant();
+            if (_effectiveMode is not ("view" or "edit" or "create")) _effectiveMode = "view";
+
             _statuses = await VehicleStatusService.GetAllAsync(onlyActive: true);
-            _tab = Mode == "history" ? "history" : "info";
+            _tab = "info"; // luôn mở info khi mở drawer
 
             if (_modeIsCreate)
             {
-                _model = new Vehicle
+                _model = new Vehicle { VehicleId = Guid.NewGuid().ToString() };
+
+                _create = new VehicleCreateDto
                 {
-                    VehicleId = Guid.NewGuid().ToString(),
-                    StatusId = _statuses.FirstOrDefault()?.StatusId ?? 1
+                    StatusId = _statuses.FirstOrDefault()?.StatusId ?? 1,
+                    LicensePlate = "" // tránh null
                 };
+                _createEditContext = new EditContext(_create);
 
-                _toStatusId = _model.StatusId;
-                _currentStatusName = _statuses.FirstOrDefault(x => x.StatusId == _model.StatusId)?.Name ?? "";
                 _manufactureDateLocal = null;
-                _history = new();
 
-                // reset create fields
-                _createVehicleCode = "";
-                _createOperatingArea = "";
+                _toStatusId = _create.StatusId;
+                _currentStatusName = _statuses.FirstOrDefault(x => x.StatusId == _toStatusId)?.Name ?? "";
 
-                // reset change-code fields
+                _statusHistory = new();
+                _codeHistory = new();
+
                 _codeOperatingArea = "";
                 _codeVehicleCode = "";
                 _codeReason = "";
@@ -392,34 +556,43 @@
                     var v = await VehicleService.GetAsync(VehicleId);
                     _model = v ?? new Vehicle { VehicleId = VehicleId };
 
+                    _manufactureDateLocal = _model.ManufactureDate?.UtcDateTime.Date;
+
                     _toStatusId = _model.StatusId;
                     _currentStatusName = _model.Status?.Name
                         ?? _statuses.FirstOrDefault(x => x.StatusId == _model.StatusId)?.Name
                         ?? "";
 
-                    _manufactureDateLocal = _model.ManufactureDate?.UtcDateTime.Date;
-                    _history = await VehicleStatusHistoryService.GetByVehicleAsync(_model.VehicleId, take: 200);
+                    // load histories
+                    _statusHistory = await VehicleStatusHistoryService.GetByVehicleAsync(_model.VehicleId, 200);
+                    _codeHistory = await VehicleCodeHistoryService.GetByVehicleAsync(_model.VehicleId, 200);
 
-                    // change-code default
+                    // init edit vm
+                    _editVm = VehicleEditVm.FromModel(_model);
+                    _editEditContext = new EditContext(_editVm);
+
+                    _codeOperatingArea = "";
                     _codeVehicleCode = "";
                     _codeReason = "";
-                    _codeOperatingArea ??= ""; // user chọn
                 }
             }
         }
-        catch (Exception ex) { _error = ex.Message; }
-        finally { _loading = false; }
+        catch (Exception ex)
+        {
+            _error = ex.GetBaseException().Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 
     private void SelectTab(string tab)
     {
         _tab = tab;
         _error = null;
-
-        if (tab == "code")
-        {
-            _codeHint = "Quy trình: chọn Khu vực + nhập Số hiệu mới => hệ thống tự ghi lịch sử và cập nhật CurrentVehicleCode.";
-        }
+        _success = null;
+        StateHasChanged();
     }
 
     private string TabClass(string tab)
@@ -427,71 +600,117 @@
             ? "border-emerald-600 text-emerald-700 font-semibold"
             : "border-transparent text-slate-600 hover:text-slate-900");
 
-    private async Task SaveInfoAsync()
+    private void InvalidSubmit(EditContext _)
+    {
+        _error = "Form chưa hợp lệ. Xem ValidationSummary và ValidationMessage.";
+        _success = null;
+    }
+
+    private static DateTimeOffset? ToUtcDateOnly(DateTime? d)
+    {
+        if (!d.HasValue) return null;
+        var utc = DateTime.SpecifyKind(d.Value.Date, DateTimeKind.Utc);
+        return new DateTimeOffset(utc);
+    }
+
+    private static string FormatLocal(DateTimeOffset? dt)
+        => dt.HasValue ? dt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss") : "";
+
+    private async Task SaveCreateAsync()
     {
         if (IsReadOnly) return;
 
         _error = null;
+        _success = null;
         _saving = true;
 
         try
         {
-            // map date -> DateTimeOffset?
-            _model.ManufactureDate = _manufactureDateLocal.HasValue
-                ? new DateTimeOffset(DateTime.SpecifyKind(_manufactureDateLocal.Value.Date, DateTimeKind.Utc))
-                : null;
+            // map date -> utc date-only
+            _create.ManufactureDate = ToUtcDateOnly(_manufactureDateLocal);
 
-            if (_modeIsCreate)
-            {
-                if (!CanSubmitCreate)
-                    throw new InvalidOperationException("Bạn đã nhập Số hiệu xe nhưng chưa chọn Khu vực.");
+            // normalize string
+            _create.OperatingArea = _create.OperatingArea?.Trim();
+            _create.CurrentVehicleCode = _create.CurrentVehicleCode?.Trim();
+            _create.LicensePlate = (_create.LicensePlate ?? "").Trim();
 
-                var dto = new VehicleCreateDto
-                {
-                    OperatingArea = string.IsNullOrWhiteSpace(_createOperatingArea) ? null : _createOperatingArea,
-                    CurrentVehicleCode = string.IsNullOrWhiteSpace(_createVehicleCode) ? null : _createVehicleCode,
+            var created = await VehicleService.CreateAsync(_create, CurrentUserName);
 
-                    LicensePlate = _model.LicensePlate,
-                    Brand = _model.Brand,
-                    SeatCount = _model.SeatCount,
-                    Color = _model.Color,
-                    ManufactureDate = _model.ManufactureDate,
-                    VehicleType = _model.VehicleType,
-                    ChassisNumber = _model.ChassisNumber,
-                    EngineNumber = _model.EngineNumber,
-                    StatusId = _model.StatusId
-                };
+            _model.VehicleId = created.VehicleId;
 
-                var created = await VehicleService.CreateAsync(dto, CurrentUserName);
-                _model.VehicleId = created.VehicleId;
-            }
-            else
-            {
-                // EDIT: không cho sửa CurrentVehicleCode tại đây (đổi số hiệu phải qua tab code)
-                var dto = new VehicleUpdateDto
-                {
-                    VehicleId = _model.VehicleId,
-                    LicensePlate = _model.LicensePlate,
-                    Brand = _model.Brand,
-                    SeatCount = _model.SeatCount,
-                    Color = _model.Color,
-                    ManufactureDate = _model.ManufactureDate,
-                    VehicleType = _model.VehicleType,
-                    ChassisNumber = _model.ChassisNumber,
-                    EngineNumber = _model.EngineNumber,
-                    StatusId = _model.StatusId
-                };
+            // chuyển sang edit và reload
+            _effectiveMode = "edit";
+            await ReloadAllAsync();
 
-                await VehicleService.UpdateAsync(dto, CurrentUserName);
-            }
-
-            await ReloadModelAndHistoryAsync();
-
+            _success = "Tạo xe thành công.";
             await OnSaved.InvokeAsync();
-            await Close();
         }
-        catch (Exception ex) { _error = ex.Message; }
-        finally { _saving = false; }
+        catch (Exception ex)
+        {
+            _error = ex.GetBaseException().Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task SaveEditAsync()
+    {
+        if (IsReadOnly) return;
+
+        _error = null;
+        _success = null;
+        _saving = true;
+
+        try
+        {
+            var dto = new VehicleUpdateDto
+            {
+                VehicleId = _model.VehicleId,
+                LicensePlate = (_editVm.LicensePlate ?? "").Trim(),
+                Brand = _editVm.Brand,
+                SeatCount = _editVm.SeatCount,
+                Color = _editVm.Color,
+                ManufactureDate = ToUtcDateOnly(_manufactureDateLocal),
+                VehicleType = _editVm.VehicleType,
+                ChassisNumber = _editVm.ChassisNumber,
+                EngineNumber = _editVm.EngineNumber,
+                StatusId = _editVm.StatusId
+            };
+
+            await VehicleService.UpdateAsync(dto, CurrentUserName);
+
+            await ReloadAllAsync();
+            _success = "Lưu thành công.";
+            await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.GetBaseException().Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task ReloadAllAsync()
+    {
+        var v = await VehicleService.GetAsync(_model.VehicleId);
+        if (v != null) _model = v;
+
+        _currentStatusName = _model.Status?.Name
+            ?? _statuses.FirstOrDefault(x => x.StatusId == _model.StatusId)?.Name
+            ?? "";
+
+        _manufactureDateLocal = _model.ManufactureDate?.UtcDateTime.Date;
+
+        _statusHistory = await VehicleStatusHistoryService.GetByVehicleAsync(_model.VehicleId, 200);
+        _codeHistory = await VehicleCodeHistoryService.GetByVehicleAsync(_model.VehicleId, 200);
+
+        _editVm = VehicleEditVm.FromModel(_model);
+        _editEditContext = new EditContext(_editVm);
     }
 
     private async Task ChangeVehicleCodeAsync()
@@ -500,6 +719,7 @@
         if (string.IsNullOrWhiteSpace(_model.VehicleId)) return;
 
         _error = null;
+        _success = null;
         _saving = true;
 
         try
@@ -517,27 +737,22 @@
 
             await VehicleService.ChangeVehicleCodeAsync(dto, CurrentUserName);
 
-            await ReloadModelAndHistoryAsync();
-            await OnSaved.InvokeAsync();
-
             _codeVehicleCode = "";
             _codeReason = "";
-            _codeHint = "Đổi số hiệu thành công. Hệ thống đã cập nhật CurrentVehicleCode và ghi lịch sử.";
+            _codeOperatingArea = "";
+
+            await ReloadAllAsync();
+            _success = "Đổi số hiệu thành công.";
+            await OnSaved.InvokeAsync();
         }
-        catch (Exception ex) { _error = ex.Message; }
-        finally { _saving = false; }
-    }
-
-    private async Task ReloadModelAndHistoryAsync()
-    {
-        var v = await VehicleService.GetAsync(_model.VehicleId);
-        if (v is not null) _model = v;
-
-        _currentStatusName = _model.Status?.Name
-            ?? _statuses.FirstOrDefault(x => x.StatusId == _model.StatusId)?.Name
-            ?? "";
-
-        _history = await VehicleStatusHistoryService.GetByVehicleAsync(_model.VehicleId, 200);
+        catch (Exception ex)
+        {
+            _error = ex.GetBaseException().Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 
     private async Task ChangeStatusAsync()
@@ -546,16 +761,24 @@
         if (string.IsNullOrWhiteSpace(_model.VehicleId)) return;
 
         _error = null;
+        _success = null;
         _saving = true;
 
         try
         {
             await VehicleService.ChangeStatusAsync(_model.VehicleId, _toStatusId, CurrentUserName, _statusNote);
-            await ReloadModelAndHistoryAsync();
+            await ReloadAllAsync();
+            _success = "Đổi trạng thái thành công.";
             await OnSaved.InvokeAsync();
         }
-        catch (Exception ex) { _error = ex.Message; }
-        finally { _saving = false; }
+        catch (Exception ex)
+        {
+            _error = ex.GetBaseException().Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 
     private async Task SoftDeleteAsync()
@@ -564,16 +787,24 @@
         if (string.IsNullOrWhiteSpace(_model.VehicleId)) return;
 
         _error = null;
+        _success = null;
         _saving = true;
 
         try
         {
             await VehicleService.SoftDeleteAsync(_model.VehicleId, CurrentUserName, "Ngừng hoạt động");
-            await ReloadModelAndHistoryAsync();
+            await ReloadAllAsync();
+            _success = "Cập nhật thành công.";
             await OnSaved.InvokeAsync();
         }
-        catch (Exception ex) { _error = ex.Message; }
-        finally { _saving = false; }
+        catch (Exception ex)
+        {
+            _error = ex.GetBaseException().Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 
     private async Task RestoreAsync()
@@ -582,24 +813,28 @@
         if (string.IsNullOrWhiteSpace(_model.VehicleId)) return;
 
         _error = null;
+        _success = null;
         _saving = true;
 
         try
         {
             await VehicleService.RestoreAsync(_model.VehicleId, CurrentUserName, "Khôi phục hoạt động");
-            await ReloadModelAndHistoryAsync();
+            await ReloadAllAsync();
+            _success = "Cập nhật thành công.";
             await OnSaved.InvokeAsync();
         }
-        catch (Exception ex) { _error = ex.Message; }
-        finally { _saving = false; }
+        catch (Exception ex)
+        {
+            _error = ex.GetBaseException().Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 
-    private async Task Close() => await OnClose.InvokeAsync();
-
-    // UI Tailwind
-    private string UiInput => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
-    private string UiSelect => "mt-1 w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20";
-    private string UiBtnBase => "inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-emerald-500/20";
-    private string UiBtnOutline => $"{UiBtnBase} min-w-[120px] border border-slate-300 bg-white text-slate-700 hover:bg-slate-50";
-    private string UiBtnPrimary => $"{UiBtnBase} min-w-[120px] border border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700";
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
 }

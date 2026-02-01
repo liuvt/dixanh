@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Components.Authorization;
 namespace dixanh.Components.Pages.Bases;
 public class VehicleBase : ComponentBase
 {
-
     [Inject]
     protected IVehicleService vehicleService { get; set; } = default!;
     [Inject]

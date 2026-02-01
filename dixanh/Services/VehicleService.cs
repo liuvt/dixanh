@@ -34,21 +34,6 @@ public sealed class VehicleService : IVehicleService
             .FirstOrDefaultAsync(x => x.VehicleId == vehicleId);
     }
 
-    // Tìm kiếm xe với phân trang
-    // Ví dụ sử dụng:
-    // var (items, total) = await vehicleService.SearchAsync(
-    //     plate: "68A",
-    //     statusId: 1,
-    //     fromUtc: new DateTimeOffset(new DateTime(2023, 1, 1)),
-    //     toUtc: new DateTimeOffset(new DateTime(2023, 12, 31)),
-    //     page: 1,
-    //     pageSize: 20);
-    // foreach (var v in items)
-    // {
-    //     Console.WriteLine($"{v.LicensePlate} - {v.Brand} - {v.Status?.Name}");
-    // }
-    // Console.WriteLine($"Total vehicles found: {total}");
-    // plate: Biển số xe (tìm kiếm chứa)
     public async Task<(List<Vehicle> Items, int Total)> SearchAsync(
         string? currentVehicleCode,
         string? plate,
@@ -99,8 +84,6 @@ public sealed class VehicleService : IVehicleService
 
         try
         {
-            var now = DateTimeOffset.UtcNow;
-
             // 1) validate StatusId tồn tại
             var statusExists = await db.Set<VehicleStatus>()
                 .AnyAsync(x => x.StatusId == dto.StatusId);
@@ -111,29 +94,37 @@ public sealed class VehicleService : IVehicleService
             var plateExists = await db.Vehicles.AnyAsync(x => x.LicensePlate == plate);
             if (plateExists) throw new InvalidOperationException($"Biển số '{plate}' đã tồn tại.");
 
-            // 3) normalize số tài + khu vực
-            var code = (dto.CurrentVehicleCode ?? "").Trim().ToUpperInvariant();
-            var area = (dto.OperatingArea ?? "").Trim().ToUpperInvariant();
+            // 3) normalize code/area
+            var hasCode = !string.IsNullOrWhiteSpace(dto.CurrentVehicleCode);
+            var code = hasCode ? dto.CurrentVehicleCode!.Trim().ToUpperInvariant() : null;
 
-            // 4) nếu có nhập số tài => bắt buộc có khu vực
-            if (!string.IsNullOrWhiteSpace(code) && string.IsNullOrWhiteSpace(area))
-                throw new InvalidOperationException("Bạn đã nhập Số tài nhưng chưa chọn Khu vực (OperatingArea).");
+            var hasArea = !string.IsNullOrWhiteSpace(dto.OperatingArea);
+            var area = hasArea ? dto.OperatingArea!.Trim().ToUpperInvariant() : null;
 
-            // 5) check trùng số tài ACTIVE theo khu vực (để báo lỗi đẹp)
-            if (!string.IsNullOrWhiteSpace(code))
+            // nếu có code thì bắt buộc có area
+            if (hasCode && !hasArea)
+                throw new InvalidOperationException("Bạn đã nhập Số hiệu xe nhưng chưa chọn Khu vực.");
+
+            // 4) nếu có code+area: check trùng active ở VehicleCodeHistory
+            if (hasCode)
             {
-                var existsActive = await db.Set<VehicleCodeHistory>().AsNoTracking()
-                    .AnyAsync(x => x.OperatingArea == area && x.VehicleCode == code && x.ValidTo == null);
+                var codeInUse = await db.Set<VehicleCodeHistory>().AsNoTracking()
+                    .AnyAsync(x =>
+                        x.ValidTo == null &&
+                        x.OperatingArea == area &&
+                        x.VehicleCode == code);
 
-                if (existsActive)
-                    throw new InvalidOperationException($"Số tài '{code}' tại khu vực '{area}' đã được dùng bởi xe khác.");
+                if (codeInUse)
+                    throw new InvalidOperationException($"Số hiệu '{code}' tại khu vực '{area}' đang được dùng bởi xe khác.");
             }
 
-            // 6) create Vehicle
+            var now = DateTimeOffset.UtcNow;
+
+            // 5) tạo Vehicle
             var vehicle = new Vehicle
             {
                 VehicleId = Guid.NewGuid().ToString(),
-                CurrentVehicleCode = code, // cache để search nhanh
+                CurrentVehicleCode = code, // NULL nếu không nhập
                 LicensePlate = plate,
                 Brand = dto.Brand?.Trim() ?? "",
                 SeatCount = dto.SeatCount,
@@ -150,7 +141,7 @@ public sealed class VehicleService : IVehicleService
 
             db.Vehicles.Add(vehicle);
 
-            // 7) status history INIT
+            // 6) add status history INIT
             db.Set<VehicleStatusHistory>().Add(new VehicleStatusHistory
             {
                 VehicleId = vehicle.VehicleId,
@@ -161,15 +152,15 @@ public sealed class VehicleService : IVehicleService
                 Note = "INIT"
             });
 
-            // 8) code history INIT (active) nếu có số tài
-            if (!string.IsNullOrWhiteSpace(code))
+            // 7) nếu có code+area: add VehicleCodeHistory active
+            if (hasCode)
             {
                 db.Set<VehicleCodeHistory>().Add(new VehicleCodeHistory
                 {
                     Id = Guid.NewGuid().ToString(),
                     VehicleId = vehicle.VehicleId,
-                    OperatingArea = area,
-                    VehicleCode = code,
+                    OperatingArea = area!,  // đã validate
+                    VehicleCode = code!,    // đã validate
                     ValidFrom = now,
                     ValidTo = null,
                     ChangedAt = now,
@@ -180,20 +171,8 @@ public sealed class VehicleService : IVehicleService
 
             await db.SaveChangesAsync();
             await tx.CommitAsync();
+
             return vehicle;
-        }
-        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
-        {
-            await tx.RollbackAsync();
-
-            // trường hợp race-condition: 2 người tạo cùng code/area
-            var code = (dto.CurrentVehicleCode ?? "").Trim().ToUpperInvariant();
-            var area = (dto.OperatingArea ?? "").Trim().ToUpperInvariant();
-
-            if (!string.IsNullOrWhiteSpace(code) && !string.IsNullOrWhiteSpace(area))
-                throw new InvalidOperationException($"Không thể tạo xe: Số tài '{code}' tại khu vực '{area}' đã được dùng.", ex);
-
-            throw;
         }
         catch
         {
@@ -388,18 +367,10 @@ public sealed class VehicleService : IVehicleService
 
     // Đổi mã xe
     // Luồng nghiệp vụ:
-    // - Kiểm tra DTO hợp lệ
-    // - Bắt đầu transaction
-    // - Lấy xe theo VehicleId
-    // - Lấy record active hiện tại trong VehicleCodeHistory (nếu có)
-    // - Nếu active hiện tại trùng với yêu cầu đổi thì thôi (idempotent)
-    // - Nếu có active cũ thì đóng (set ValidTo)
-    // - Thêm record mới vào VehicleCodeHistory
-    // - Cập nhật CurrentVehicleCode trên Vehicle
-    // - Commit transaction
-    // - Bắt lỗi unique violation từ DB (nếu có) và trả về lỗi dễ hiểu hơn
     public async Task ChangeVehicleCodeAsync(VehicleCodeChangeDto dto, string actor)
     {
+        Console.WriteLine("ChangeVehicleCodeAsync called");
+        Console.WriteLine($"DTO: VehicleId={dto?.VehicleId}, OperatingArea={dto?.OperatingArea}, VehicleCode={dto?.VehicleCode}");
         if (dto == null) throw new ArgumentNullException(nameof(dto));
         if (string.IsNullOrWhiteSpace(dto.VehicleId)) throw new ArgumentException("VehicleId rỗng.");
         if (string.IsNullOrWhiteSpace(dto.OperatingArea)) throw new ArgumentException("OperatingArea rỗng.");
