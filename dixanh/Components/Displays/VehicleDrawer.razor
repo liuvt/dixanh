@@ -779,12 +779,16 @@
     {
         if (string.IsNullOrWhiteSpace(raw)) return null;
 
-        if (DateTime.TryParseExact(
-            raw.Trim(),
-            "yyyy-MM-ddTHH:mm",
+        var formats = new[]
+        {
+        "yyyy-MM-ddTHH:mm",
+        "yyyy-MM-ddTHH:mm:ss",
+        "yyyy-MM-ddTHH:mm:ss.fff"
+    };
+
+        if (DateTime.TryParseExact(raw.Trim(), formats,
             System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.None,
-            out var dt))
+            System.Globalization.DateTimeStyles.None, out var dt))
             return dt;
 
         return null;
