@@ -107,13 +107,6 @@ public class VehicleBase : ComponentBase
         _drawerOpen = true;
     }
 
-    protected void OpenDrawerHistory(string vehicleId)
-    {
-        _drawerMode = "history";
-        _selectedVehicleId = vehicleId;
-        _drawerOpen = true;
-    }
-
     protected void CloseDrawer()
     {
         _drawerOpen = false;

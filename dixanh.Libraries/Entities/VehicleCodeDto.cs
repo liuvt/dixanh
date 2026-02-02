@@ -1,4 +1,6 @@
-﻿namespace dixanh.Libraries.Entities
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace dixanh.Libraries.Entities
 {
     public class VehicleCodeDto
     {
@@ -7,7 +9,10 @@
     {
         public string VehicleId { get; set; } = string.Empty;
         public string OperatingArea { get; set; } = string.Empty; // RG/PQ/CT...
+        [Required(ErrorMessage = "Không được bỏ trống Số hiệu xe.")]
         public string VehicleCode { get; set; } = string.Empty;   // số hiệu mới
+        [Required(ErrorMessage = "Không được bỏ trống Ngày hiệu lực.")]
+        public DateTimeOffset ValidFrom { get; set; } = DateTimeOffset.UtcNow; // Hiệu lực từ (hieuluc_tu)
         public string? ChangeReason { get; set; }                 // lý do
     }
 

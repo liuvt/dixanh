@@ -5,10 +5,10 @@
 <PageTitle>Quản lý xe - Đi Xanh</PageTitle>
 
 <main class="flex-1 p-2">
-    <div class="mb-4">
+    <div class="mb-4 px-2">
         <div class="text-sm text-slate-500">Dashboard / <span class="text-slate-700">Vehicles</span></div>
         <div class="mt-1 flex items-center justify-between gap-3">
-            <div class="text-2xl font-semibold text-slate-900">List vehicle</div>
+            <div class="text-2xl font-semibold text-slate-900">Danh sách xe</div>
 
             <button class="@_TVTTemplate.UiBtnPrimary"
                     @onclick="() => OpenDrawerCreate(_currentNameOfUser)">
@@ -94,17 +94,17 @@
             <table class="w-full min-w-[1200px] text-sm">
                 <thead class="sticky top-0 bg-slate-50">
                     <tr class="text-left text-slate-600">
-                        <th class="px-4 py-3 font-medium">MaXe</th>
+                        <th class="px-4 py-3 font-medium">Id</th>
                         <th class="px-4 py-3 font-medium">Biển số</th>
                         <th class="px-4 py-3 font-medium">Số hiệu xe</th>
                         <th class="px-4 py-3 font-medium">Thương hiệu</th>
                         <th class="px-4 py-3 font-medium">Số chỗ</th>
                         <th class="px-4 py-3 font-medium">Màu</th>
-                        <th class="px-4 py-3 font-medium">Ngày SX</th>
+                        <th class="px-4 py-3 font-medium">Ngày sản xuất</th>
                         <th class="px-4 py-3 font-medium">Trạng thái</th>
                         <th class="px-4 py-3 font-medium">Tạo lúc</th>
                         <th class="px-4 py-3 font-medium">Cập nhật</th>
-                        <th class="px-4 py-3 font-medium">Actions</th>
+                        <th class="px-4 py-3 font-medium"></th>
                     </tr>
                 </thead>
 
@@ -130,15 +130,14 @@
                                 <td class="px-4 py-3">@v.Color</td>
                                 <td class="px-4 py-3">@v.ManufactureDate.ToVnDate()</td>
                                 <td class="px-4 py-3">
-                                    @StatusBadge(v.Status?.Code, v.Status?.Name)
+                                    @_TVTTemplate.StatusBadge(v.Status?.Code, v.Status?.Name)
                                 </td>
                                 <td class="px-4 py-3">@v.CreatedAt.ToVnDateTime()</td>
                                 <td class="px-4 py-3">@v.UpdatedAt.ToVnDateTime()</td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
-                                        <button class="@_TVTTemplate.UiBtnSm" @onclick="() => OpenDrawerView(v.VehicleId)">View</button>
-                                        <button class="@_TVTTemplate.UiBtnSm" @onclick="() => OpenDrawerEdit(v.VehicleId)">Edit</button>
-                                        <button class="@_TVTTemplate.UiBtnSm" @onclick="() => OpenDrawerHistory(v.VehicleId)">History</button>
+                                        <button class="@_TVTTemplate.UiBtnSm" @onclick="() => OpenDrawerView(v.VehicleId)">Chi tiết</button>
+                                        <button class="@_TVTTemplate.UiBtnSm" @onclick="() => OpenDrawerEdit(v.VehicleId)">Cập nhật</button>
                                     </div>
                                 </td>
                             </tr>
@@ -178,20 +177,4 @@
     private static string ShortId(string id) => string.IsNullOrWhiteSpace(id) ? "" : (id.Length <= 10 ? id : id[..10] + "...");
     private static string FormatDate(DateTime? d) => d.HasValue ? d.Value.ToString("dd/MM/yyyy") : "";
     private static string FormatDateTime(DateTime? d) => d.HasValue ? d.Value.ToString("dd/MM/yyyy HH:mm:ss") : "";
-
-    private RenderFragment StatusBadge(string? code, string? name) => builder =>
-    {
-        var (cls, text) = code switch
-        {
-            "ACTIVE" => ("border-emerald-200 bg-emerald-50 text-emerald-700", name ?? "Hoạt động"),
-            "MAINTENANCE" => ("border-amber-200 bg-amber-50 text-amber-800", name ?? "Bảo trì"),
-            "INACTIVE" => ("border-slate-200 bg-slate-50 text-slate-700", name ?? "Ngừng"),
-            _ => ("border-slate-200 bg-slate-50 text-slate-700", name ?? "N/A")
-        };
-
-        builder.OpenElement(0, "span");
-        builder.AddAttribute(1, "class", $"inline-flex items-center rounded-full border px-2 py-0.5 {cls}");
-        builder.AddContent(2, text);
-        builder.CloseElement();
-    };
 }

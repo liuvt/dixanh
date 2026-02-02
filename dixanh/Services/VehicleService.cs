@@ -369,8 +369,6 @@ public sealed class VehicleService : IVehicleService
     // Luồng nghiệp vụ:
     public async Task ChangeVehicleCodeAsync(VehicleCodeChangeDto dto, string actor)
     {
-        Console.WriteLine("ChangeVehicleCodeAsync called");
-        Console.WriteLine($"DTO: VehicleId={dto?.VehicleId}, OperatingArea={dto?.OperatingArea}, VehicleCode={dto?.VehicleCode}");
         if (dto == null) throw new ArgumentNullException(nameof(dto));
         if (string.IsNullOrWhiteSpace(dto.VehicleId)) throw new ArgumentException("VehicleId rỗng.");
         if (string.IsNullOrWhiteSpace(dto.OperatingArea)) throw new ArgumentException("OperatingArea rỗng.");
@@ -379,6 +377,11 @@ public sealed class VehicleService : IVehicleService
         var vehicleId = dto.VehicleId.Trim();
         var area = dto.OperatingArea.Trim().ToUpperInvariant();
         var code = dto.VehicleCode.Trim().ToUpperInvariant();
+
+        // Thời điểm hiệu lực số mới (khuyến nghị: luôn là UTC)
+        var newFrom = dto.ValidFrom.ToUniversalTime();
+        if (newFrom == default) throw new ArgumentException("ValidFrom không hợp lệ.");
+
         var now = DateTimeOffset.UtcNow;
 
         await using var db = await _dbFactory.CreateDbContextAsync();
@@ -389,57 +392,59 @@ public sealed class VehicleService : IVehicleService
             var vehicle = await db.Vehicles.FirstOrDefaultAsync(x => x.VehicleId == vehicleId);
             if (vehicle is null) throw new KeyNotFoundException($"Không tìm thấy VehicleId={vehicleId}");
 
-            // Active record hiện tại (nếu có)
+            // Active record hiện tại
             var active = await db.Set<VehicleCodeHistory>()
                 .Where(x => x.VehicleId == vehicleId && x.ValidTo == null)
                 .OrderByDescending(x => x.ValidFrom)
                 .FirstOrDefaultAsync();
 
-            // Nếu đang active đúng y như vậy thì thôi (idempotent)
+            // Nếu đang active y hệt (area+code) thì idempotent, nhưng vẫn nên xét newFrom:
             if (active != null
                 && string.Equals(active.OperatingArea, area, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(active.VehicleCode, code, StringComparison.OrdinalIgnoreCase))
             {
+                // Nếu user chọn hiệu lực khác, bạn có thể cho phép update ValidFrom hoặc reject.
                 return;
             }
 
-            // Đóng active cũ
+            // Đóng active cũ theo "ngay trước newFrom"
             if (active != null)
             {
-                active.ValidTo = now;
-                active.ChangedAt = now;
+                // Chặn trường hợp newFrom <= active.ValidFrom để tránh lịch sử lỗi
+                if (newFrom <= active.ValidFrom)
+                    throw new InvalidOperationException(
+                        $"Ngày hiệu lực mới ({newFrom:dd/MM/yyyy HH:mm}) phải lớn hơn ngày hiệu lực hiện tại ({active.ValidFrom:dd/MM/yyyy HH:mm}).");
+
+                active.ValidTo = newFrom.AddTicks(-1);  // <= đây là cái bạn cần
+                active.ChangedAt = now;                 // thời điểm thao tác
                 active.ChangedBy = actor;
                 active.ChangeReason = string.IsNullOrWhiteSpace(dto.ChangeReason) ? "Đổi số hiệu" : dto.ChangeReason;
             }
 
-            // Insert active mới
+            // Insert record mới
             db.Set<VehicleCodeHistory>().Add(new VehicleCodeHistory
             {
                 Id = Guid.NewGuid().ToString(),
                 VehicleId = vehicleId,
                 OperatingArea = area,
                 VehicleCode = code,
-                ValidFrom = now,
+                ValidFrom = newFrom,
                 ValidTo = null,
                 ChangedAt = now,
                 ChangedBy = actor,
                 ChangeReason = dto.ChangeReason
             });
 
-            // Update số hiệu hiện tại trên Vehicle
-            vehicle.CurrentVehicleCode = code;
-            vehicle.UpdatedAt = now;
+            // Update số hiệu hiện tại trên Vehicle (chỉ đúng nếu newFrom <= now)
+            // Nếu bạn cho phép set hiệu lực tương lai, thì không nên update CurrentVehicleCode ngay.
+            if (newFrom <= now)
+            {
+                vehicle.CurrentVehicleCode = code;
+                vehicle.UpdatedAt = now;
+            }
 
             await db.SaveChangesAsync();
             await tx.CommitAsync();
-        }
-        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
-        {
-            await tx.RollbackAsync();
-            // filtered unique index sẽ đẩy lỗi khi:
-            // - 1 xe có 2 active
-            // - 1 khu vực trùng code active với xe khác
-            throw new InvalidOperationException($"Không thể đổi số hiệu: Số hiệu '{code}' tại khu vực '{area}' đang được dùng bởi xe khác (hoặc xe này đang có 2 số hiệu active).", ex);
         }
         catch
         {

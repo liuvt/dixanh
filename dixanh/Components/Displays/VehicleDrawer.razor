@@ -58,13 +58,13 @@
                 {
                     @if (!string.IsNullOrWhiteSpace(_error))
                     {
-                        <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                        <div class="@_TVTTemplate.UiMsError">
                             @_error
                         </div>
                     }
                     @if (!string.IsNullOrWhiteSpace(_success))
                     {
-                        <div class="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                        <div class="@_TVTTemplate.UiMsSuccess">
                             @_success
                         </div>
                     }
@@ -79,7 +79,7 @@
                                       OnValidSubmit="SaveCreateAsync"
                                       OnInvalidSubmit="InvalidSubmit">
                                 <DataAnnotationsValidator />
-                                <ValidationSummary />
+                                <!-- <ValidationSummary class="@_TVTTemplate.UiMsError" />-->
 
                                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div class="md:col-span-2">
@@ -90,12 +90,9 @@
                                     <div>
                                         <label class="text-sm font-medium text-slate-700">Số hiệu xe (Số tài)</label>
                                         <InputText class="@_TVTTemplate.UiInput"
-                                                   placeholder="VD: 0123"
+                                                   placeholder="RG1234"
                                                    @bind-Value="_create.CurrentVehicleCode" />
-                                        <ValidationMessage For="@(() => _create.CurrentVehicleCode)" />
-                                        <div class="mt-1 text-xs text-slate-500">
-                                            Nếu DB Vehicles.CurrentVehicleCode đang NOT NULL thì tạo mới bắt buộc nhập.
-                                        </div>
+                                        <ValidationMessage For="@(() => _create.CurrentVehicleCode)" class="@_TVTTemplate.UiMsError" />
                                     </div>
 
                                     <div>
@@ -107,7 +104,7 @@
                                                 <option value="@a">@a</option>
                                             }
                                         </InputSelect>
-                                        <ValidationMessage For="@(() => _create.OperatingArea)" />
+                                        <ValidationMessage For="@(() => _create.OperatingArea)" class="@_TVTTemplate.UiMsError" />
                                     </div>
 
                                     <div>
@@ -115,44 +112,51 @@
                                         <InputText class="@_TVTTemplate.UiInput"
                                                    placeholder="68G-000.01"
                                                    @bind-Value="_create.LicensePlate" />
-                                        <ValidationMessage For="@(() => _create.LicensePlate)" />
+                                        <ValidationMessage For="@(() => _create.LicensePlate)" class="@_TVTTemplate.UiMsError" />
                                     </div>
 
                                     <div>
                                         <label class="text-sm font-medium text-slate-700">Thương hiệu</label>
                                         <InputText class="@_TVTTemplate.UiInput" @bind-Value="_create.Brand" />
+                                        <ValidationMessage For="@(() => _create.Brand)" class="@_TVTTemplate.UiMsError" />
                                     </div>
 
                                     <div>
                                         <label class="text-sm font-medium text-slate-700">Số chỗ</label>
                                         <InputNumber class="@_TVTTemplate.UiSelect" @bind-Value="_create.SeatCount" />
+                                        <ValidationMessage For="@(() => _create.SeatCount)" class="@_TVTTemplate.UiMsError" />
                                     </div>
 
                                     <div>
                                         <label class="text-sm font-medium text-slate-700">Màu</label>
                                         <InputText class="@_TVTTemplate.UiInput" @bind-Value="_create.Color" />
+                                        <ValidationMessage For="@(() => _create.Color)" class="@_TVTTemplate.UiMsError" />
+
                                     </div>
 
                                     <div>
-                                        <label class="text-sm font-medium text-slate-700">Ngày SX</label>
+                                        <label class="text-sm font-medium text-slate-700">Ngày sản xuất</label>
                                         <InputDate class="@_TVTTemplate.UiInput" @bind-Value="_manufactureDateLocal" />
-                                        @* Validate() trong dto check future, nó trả về ValidationMessage cho ManufactureDate *@
-                                        <ValidationMessage For="@(() => _create.ManufactureDate)" />
+                                        <ValidationMessage For="@(() => _create.ManufactureDate)" class="@_TVTTemplate.UiMsError" />
+
                                     </div>
 
                                     <div>
                                         <label class="text-sm font-medium text-slate-700">Loại xe</label>
                                         <InputText class="@_TVTTemplate.UiInput" @bind-Value="_create.VehicleType" />
+                                        <ValidationMessage For="@(() => _create.VehicleType)" class="@_TVTTemplate.UiMsError" />
                                     </div>
 
                                     <div>
                                         <label class="text-sm font-medium text-slate-700">Số khung</label>
                                         <InputText class="@_TVTTemplate.UiInput" @bind-Value="_create.ChassisNumber" />
+                                        <ValidationMessage For="@(() => _create.ChassisNumber)" class="@_TVTTemplate.UiMsError" />
                                     </div>
 
                                     <div>
                                         <label class="text-sm font-medium text-slate-700">Số máy</label>
                                         <InputText class="@_TVTTemplate.UiInput" @bind-Value="_create.EngineNumber" />
+                                        <ValidationMessage For="@(() => _create.EngineNumber)" class="@_TVTTemplate.UiMsError" />
                                     </div>
 
                                     <div class="md:col-span-2">
@@ -163,7 +167,7 @@
                                                 <option value="@s.StatusId">@s.Name</option>
                                             }
                                         </InputSelect>
-                                        <ValidationMessage For="@(() => _create.StatusId)" />
+                                        <ValidationMessage For="@(() => _create.StatusId)" class="@_TVTTemplate.UiMsError" />
                                     </div>
                                 </div>
 
@@ -211,7 +215,7 @@
                                     </div>
 
                                     <div>
-                                        <label class="text-sm font-medium text-slate-700">Ngày SX</label>
+                                        <label class="text-sm font-medium text-slate-700">Ngày sản xuất</label>
                                         <InputDate class="@_TVTTemplate.UiInput" @bind-Value="_manufactureDateLocal" disabled="@IsReadOnly" />
                                     </div>
 
@@ -261,46 +265,61 @@
                         <div class="rounded-xl border border-slate-200 p-4">
                             <div class="text-sm text-slate-500">Số hiệu hiện tại</div>
                             <div class="mt-1 text-lg font-semibold text-slate-900">@(_model.CurrentVehicleCode ?? "")</div>
-
-                            <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Khu vực</label>
-                                    <select class="@_TVTTemplate.UiSelect" @bind="_codeOperatingArea" disabled="@IsReadOnly">
-                                        <option value="">-- Chọn khu vực --</option>
-                                        @foreach (var a in _operatingAreas)
-                                        {
-                                            <option value="@a">@a</option>
-                                        }
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Số hiệu xe mới</label>
-                                    <input class="@_TVTTemplate.UiInput"
-                                           placeholder="VD: 0123"
-                                           @bind="_codeVehicleCode"
-                                           @bind:event="oninput"
-                                           disabled="@IsReadOnly" />
-                                </div>
-
-                                <div class="md:col-span-2">
-                                    <label class="text-sm font-medium text-slate-700">Lý do</label>
-                                    <input class="@_TVTTemplate.UiInput"
-                                           placeholder="VD: chuyển đội / đổi khu vực..."
-                                           @bind="_codeReason"
-                                           @bind:event="oninput"
-                                           disabled="@IsReadOnly" />
-                                </div>
-                            </div>
-
                             @* View thì không hiện button đổi số hiệu *@
                             @if (!IsReadOnly)
                             {
+                                <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Khu vực</label>
+                                        <select class="@_TVTTemplate.UiSelect" @bind="_codeOperatingArea" disabled="@IsReadOnly">
+                                            <option value="">-- Chọn khu vực --</option>
+                                            @foreach (var a in _operatingAreas)
+                                            {
+                                                <option value="@a">@a</option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Số hiệu xe mới</label>
+                                        <input class="@_TVTTemplate.UiInput"
+                                               placeholder="VD: 0123"
+                                               @bind="_codeVehicleCode"
+                                               @bind:event="oninput"
+                                               disabled="@IsReadOnly" />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Hiệu lực từ</label>
+
+                                        <input type="datetime-local"
+                                               class="@_TVTTemplate.UiInput"
+                                               value="@_codeEffectiveAtRaw"
+                                               @onchange="OnEffectiveAtChanged"
+                                               step="60"
+                                               disabled="@IsReadOnly" />
+
+                                        @* debug (tạm thời) *@
+                                        <div class="mt-1 text-xs text-slate-500">
+                                            raw: @_codeEffectiveAtRaw
+                                        </div>
+                                    </div>
+
+                                    <div class="md:col-span-2">
+                                        <label class="text-sm font-medium text-slate-700">Lý do</label>
+                                        <input class="@_TVTTemplate.UiInput"
+                                               placeholder="VD: chuyển đội / đổi khu vực..."
+                                               @bind="_codeReason"
+                                               @bind:event="oninput"
+                                               disabled="@IsReadOnly" />
+                                    </div>
+                                </div>
+
                                 <div class="mt-4 flex justify-end gap-2">
                                     <button type="button"
                                             class="@_TVTTemplate.UiBtnPrimary"
                                             @onclick="ChangeVehicleCodeAsync"
-                                            disabled="@(_saving || !CanSubmitChangeCode)">
+                                            disabled="@(_saving)">
                                         Đổi số hiệu
                                     </button>
                                 </div>
@@ -316,12 +335,12 @@
                                 <table class="w-full text-sm">
                                     <thead class="bg-white">
                                         <tr class="text-left text-slate-600">
-                                            <th class="px-4 py-3 font-medium">ValidFrom</th>
-                                            <th class="px-4 py-3 font-medium">Area</th>
-                                            <th class="px-4 py-3 font-medium">Code</th>
-                                            <th class="px-4 py-3 font-medium">ChangedAt</th>
-                                            <th class="px-4 py-3 font-medium">By</th>
-                                            <th class="px-4 py-3 font-medium">Reason</th>
+                                            <th class="px-4 py-3 font-medium">Ngày hiệu lực</th>
+                                            <th class="px-4 py-3 font-medium">Khu vực</th>
+                                            <th class="px-4 py-3 font-medium">Số hiệu</th>
+                                            <th class="px-4 py-3 font-medium">Thời gian chuyển</th>
+                                            <th class="px-4 py-3 font-medium">Chuyển bởi</th>
+                                            <th class="px-4 py-3 font-medium">Chuyển với lý do</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-200">
@@ -355,31 +374,30 @@
                         <!-- Status form -->
                         <div class="rounded-xl border border-slate-200 p-4">
                             <div class="text-sm text-slate-500">Trạng thái hiện tại</div>
-                            <div class="mt-1 text-lg font-semibold text-slate-900">@_currentStatusName</div>
-
-                            <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Chuyển sang</label>
-                                    <select class="@_TVTTemplate.UiSelect" @bind="_toStatusId" disabled="@IsReadOnly">
-                                        @foreach (var s in _statuses)
-                                        {
-                                            <option value="@s.StatusId">@s.Name</option>
-                                        }
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700">Ghi chú</label>
-                                    <input class="@_TVTTemplate.UiInput"
-                                           placeholder="Lý do đổi trạng thái..."
-                                           @bind="_statusNote"
-                                           disabled="@IsReadOnly" />
-                                </div>
-                            </div>
-
+                            <div class="mt-1 text-lg font-semibold text-slate-900">@_TVTTemplate.StatusBadge(_currentStatusCode, _currentStatusName)</div>
                             @* View thì không hiển thị nút thay đổi *@
                             @if (!IsReadOnly)
                             {
+                                <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Chuyển sang</label>
+                                        <select class="@_TVTTemplate.UiSelect" @bind="_toStatusId" disabled="@IsReadOnly">
+                                            @foreach (var s in _statuses)
+                                            {
+                                                <option value="@s.StatusId">@s.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700">Ghi chú</label>
+                                        <input class="@_TVTTemplate.UiInput"
+                                               placeholder="Lý do đổi trạng thái..."
+                                               @bind="_statusNote"
+                                               disabled="@IsReadOnly" />
+                                    </div>
+                                </div>
+
                                 <div class="mt-4 flex flex-wrap justify-end gap-2">
                                     <button type="button"
                                             class="@_TVTTemplate.UiBtnOutline"
@@ -415,11 +433,11 @@
                                 <table class="w-full text-sm">
                                     <thead class="bg-white">
                                         <tr class="text-left text-slate-600">
-                                            <th class="px-4 py-3 font-medium">ChangedAt</th>
-                                            <th class="px-4 py-3 font-medium">From</th>
-                                            <th class="px-4 py-3 font-medium">To</th>
-                                            <th class="px-4 py-3 font-medium">By</th>
-                                            <th class="px-4 py-3 font-medium">Note</th>
+                                            <th class="px-4 py-3 font-medium">Chuyển lúc</th>
+                                            <th class="px-4 py-3 font-medium">Chuyển từ</th>
+                                            <th class="px-4 py-3 font-medium">Chuyển thành</th>
+                                            <th class="px-4 py-3 font-medium">Chuyển bởi</th>
+                                            <th class="px-4 py-3 font-medium">Chuyển với nội dung</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-200">
@@ -487,6 +505,7 @@
     private int _toStatusId;
     private string? _statusNote;
     private string _currentStatusName = "";
+    private string _currentStatusCode = "";
 
     // histories
     private List<VehicleStatusHistory> _statusHistory = new();
@@ -496,6 +515,10 @@
     private string? _codeOperatingArea;
     private string? _codeVehicleCode;
     private string? _codeReason;
+
+    #region Change Status Methods
+
+    #endregion
 
     private readonly List<string> _operatingAreas = new()
     { "Rạch Giá", "Phú Quốc", "Cần Thơ", "Sóc Trăng", "Hậu Giang", "Cà Mau", "An Giang", "Bạc Liêu", "Vĩnh Long" };
@@ -508,7 +531,12 @@
     };
 
     private bool DisableNonInfoTabs => _modeIsCreate || string.IsNullOrWhiteSpace(_model.VehicleId);
-    private bool CanSubmitChangeCode => !string.IsNullOrWhiteSpace(_codeOperatingArea) && !string.IsNullOrWhiteSpace(_codeVehicleCode);
+    private bool CanSubmitChangeCode => !IsReadOnly
+                                        && !_saving
+                                        && !string.IsNullOrWhiteSpace(_model.VehicleId)
+                                        && !string.IsNullOrWhiteSpace(_codeOperatingArea)
+                                        && !string.IsNullOrWhiteSpace(_codeVehicleCode)
+                                        && ParseDatetimeLocal(_codeEffectiveAtRaw).HasValue; // bắt buộc có ngày
 
     protected override async Task OnParametersSetAsync()
     {
@@ -541,6 +569,7 @@
 
                 _toStatusId = _create.StatusId;
                 _currentStatusName = _statuses.FirstOrDefault(x => x.StatusId == _toStatusId)?.Name ?? "";
+                _currentStatusCode = _statuses.FirstOrDefault(x => x.StatusId == _toStatusId)?.Code ?? "";
 
                 _statusHistory = new();
                 _codeHistory = new();
@@ -602,7 +631,7 @@
 
     private void InvalidSubmit(EditContext _)
     {
-        _error = "Form chưa hợp lệ. Xem ValidationSummary và ValidationMessage.";
+        _error = "Vui lòng nhập đầy đủ thông tin trên form.";
         _success = null;
     }
 
@@ -613,8 +642,31 @@
         return new DateTimeOffset(utc);
     }
 
+    // format DateTimeOffset? to local string
     private static string FormatLocal(DateTimeOffset? dt)
         => dt.HasValue ? dt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss") : "";
+
+    private static TimeZoneInfo GetVnTz()
+    {
+        // Linux
+        try { return TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh"); }
+        catch { /* ignore */ }
+
+        // Windows
+        return TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+    }
+
+    private static DateTimeOffset ToUtcFromVnLocal(DateTime localNoKind)
+    {
+        // datetime-local parse ra thường Unspecified => ta coi nó là giờ VN
+        var vnTz = GetVnTz();
+
+        var unspecified = DateTime.SpecifyKind(localNoKind, DateTimeKind.Unspecified);
+        var offset = vnTz.GetUtcOffset(unspecified);
+
+        // gắn offset +07:00 đúng chuẩn, rồi đưa về UTC
+        return new DateTimeOffset(unspecified, offset).ToUniversalTime();
+    }
 
     private async Task SaveCreateAsync()
     {
@@ -713,6 +765,31 @@
         _editEditContext = new EditContext(_editVm);
     }
 
+    #region Vehicle Code Change Methods
+
+    private string? _codeEffectiveAtRaw;
+
+    private void OnEffectiveAtChanged(ChangeEventArgs e)
+    {
+        _codeEffectiveAtRaw = e.Value?.ToString();
+    }
+
+    // datetime-local chuẩn: "yyyy-MM-ddTHH:mm"
+    private static DateTime? ParseDatetimeLocal(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+
+        if (DateTime.TryParseExact(
+            raw.Trim(),
+            "yyyy-MM-ddTHH:mm",
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None,
+            out var dt))
+            return dt;
+
+        return null;
+    }
+
     private async Task ChangeVehicleCodeAsync()
     {
         if (IsReadOnly) return;
@@ -724,22 +801,39 @@
 
         try
         {
-            if (!CanSubmitChangeCode)
-                throw new InvalidOperationException("Vui lòng chọn Khu vực và nhập Số hiệu xe mới.");
+            // Validate ngay trên UI
+            var dtLocal = ParseDatetimeLocal(_codeEffectiveAtRaw);
+            if (!dtLocal.HasValue)
+                throw new InvalidOperationException("Vui lòng chọn 'Hiệu lực từ'.");
+
+            if (string.IsNullOrWhiteSpace(_codeOperatingArea))
+                throw new InvalidOperationException("Vui lòng chọn Khu vực.");
+
+            if (string.IsNullOrWhiteSpace(_codeVehicleCode))
+                throw new InvalidOperationException("Vui lòng nhập Số hiệu xe mới.");
+
+            // Convert VN local -> UTC (hàm ToUtcFromVnLocal bạn đã có)
+            var validFromUtc = ToUtcFromVnLocal(dtLocal.Value);
 
             var dto = new VehicleCodeChangeDto
             {
                 VehicleId = _model.VehicleId,
-                OperatingArea = _codeOperatingArea!,
-                VehicleCode = _codeVehicleCode!,
+                OperatingArea = _codeOperatingArea.Trim(),
+                VehicleCode = _codeVehicleCode.Trim(),
+                ValidFrom = validFromUtc,
                 ChangeReason = _codeReason
             };
 
+            Console.WriteLine($"UI raw={_codeEffectiveAtRaw} | local={dtLocal:O} | utc={validFromUtc:O}");
+            Console.WriteLine($"DTO.ValidFrom={dto.ValidFrom:O}");
+
             await VehicleService.ChangeVehicleCodeAsync(dto, CurrentUserName);
 
+            // Reset form
             _codeVehicleCode = "";
             _codeReason = "";
             _codeOperatingArea = "";
+            _codeEffectiveAtRaw = null;
 
             await ReloadAllAsync();
             _success = "Đổi số hiệu thành công.";
@@ -754,6 +848,7 @@
             _saving = false;
         }
     }
+    #endregion
 
     private async Task ChangeStatusAsync()
     {
