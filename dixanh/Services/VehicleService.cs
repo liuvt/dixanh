@@ -5,6 +5,8 @@ using dixanh.Libraries.Models;
 using dixanh.Services.Interfaces;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace dixanh.Services;
 
@@ -18,13 +20,6 @@ public sealed class VehicleService : IVehicleService
     public VehicleService(IDbContextFactory<dixanhDBContext> dbFactory)
         => _dbFactory = dbFactory;
 
-    // Lấy thông tin xe theo ID
-    // Ví dụ sử dụng:
-    // var vehicle = await vehicleService.GetAsync("vehicle-id-123");
-    // if (vehicle != null)
-    // {
-    //     Console.WriteLine($"{vehicle.LicensePlate} - {vehicle.Brand} - {vehicle.Status?.Name}");
-    // }
     // vehicleId: ID của xe cần lấy thông tin
     public async Task<Vehicle?> GetAsync(string vehicleId)
     {
@@ -80,40 +75,47 @@ public sealed class VehicleService : IVehicleService
     public async Task<Vehicle> CreateAsync(VehicleCreateDto dto, string actor)
     {
         await using var db = await _dbFactory.CreateDbContextAsync();
-        await using var tx = await db.Database.BeginTransactionAsync();
+        // SERIALIZABLE giúp hạn chế phantom read 
+        await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
 
         try
         {
-            // 1) validate StatusId tồn tại
-            var statusExists = await db.Set<VehicleStatus>()
-                .AnyAsync(x => x.StatusId == dto.StatusId);
-            if (!statusExists) throw new InvalidOperationException($"StatusId={dto.StatusId} không tồn tại.");
 
-            // 2) validate biển số unique
+            // 1) validate biển số và số khung unique
             var plate = NormalizePlate(dto.LicensePlate);
-            var plateExists = await db.Vehicles.AnyAsync(x => x.LicensePlate == plate);
-            if (plateExists) throw new InvalidOperationException($"Biển số '{plate}' đã tồn tại.");
+            var chassis = dto.ChassisNumber?.Trim();
 
-            // 3) normalize code/area
+            if (string.IsNullOrWhiteSpace(plate))
+                throw new InvalidOperationException("Biển số không hợp lệ.");
+            if (string.IsNullOrWhiteSpace(chassis))
+                throw new InvalidOperationException("Số khung không hợp lệ.");
+
+            var existsActive = await db.Vehicles.AsNoTracking()
+                .AnyAsync(x => x.StatusId != 2  // khác INACTIVE (soft delete). Chỉ cho phép thêm mới nếu không trùng với xe ACTIVE/MAINTENANCE
+                            && x.LicensePlate == plate
+                            && x.ChassisNumber == chassis);
+            if (existsActive)
+                throw new InvalidOperationException($"Biển số '{plate}' và số khung '{chassis}' đang còn hoạt động");
+
+            // 2) Formate lại tham số số tài và khu vực normalize code/area
             var hasCode = !string.IsNullOrWhiteSpace(dto.CurrentVehicleCode);
             var code = hasCode ? dto.CurrentVehicleCode!.Trim().ToUpperInvariant() : null;
 
             var hasArea = !string.IsNullOrWhiteSpace(dto.OperatingArea);
             var area = hasArea ? dto.OperatingArea!.Trim().ToUpperInvariant() : null;
-
-            // nếu có code thì bắt buộc có area
+            // Nếu có số tài thì phải nhập khu vực
             if (hasCode && !hasArea)
-                throw new InvalidOperationException("Bạn đã nhập Số hiệu xe nhưng chưa chọn Khu vực.");
+                throw new InvalidOperationException("Vui lòng lựa chọn khu vực và số tài");
 
-            // 4) nếu có code+area: check trùng active ở VehicleCodeHistory
+            // 3) Kiểm tra trạng thái của số tài ở khu vực này trong quá khứ
             if (hasCode)
             {
+                // kiểm tra trùng code trong cùng area
                 var codeInUse = await db.Set<VehicleCodeHistory>().AsNoTracking()
                     .AnyAsync(x =>
-                        x.ValidTo == null &&
+                        x.ValidTo == null &&  //Trạng thái hoạt động nếu có ValidTo != null thì không xét
                         x.OperatingArea == area &&
                         x.VehicleCode == code);
-
                 if (codeInUse)
                     throw new InvalidOperationException($"Số hiệu '{code}' tại khu vực '{area}' đang được dùng bởi xe khác.");
             }

@@ -53,11 +53,16 @@ public sealed class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
         b.Property(x => x.ManufactureDate);
 
         // Indexes
-        b.HasIndex(x => x.LicensePlate).IsUnique();
+        b.HasIndex(x => x.LicensePlate);
         b.HasIndex(x => x.CurrentVehicleCode);
         b.HasIndex(x => new { x.StatusId, x.CreatedAt });
         b.HasIndex(x => x.CreatedAt);
         b.HasIndex(x => x.StatusId);
+
+        // UNIQUE : Cho phép trùng biển số và số khung, nếu xe đã bị "xoá" (StatusId = 2)
+        b.HasIndex(x => new { x.LicensePlate, x.ChassisNumber })
+         .IsUnique()
+         .HasFilter("[StatusId] <> 2");
 
         // Vehicle -> VehicleStatus (no cascade)
         b.HasOne(x => x.Status)

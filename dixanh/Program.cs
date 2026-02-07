@@ -43,7 +43,7 @@ builder.Services.AddIdentity<AppUser, IdentityRole>()
     .AddEntityFrameworkStores<dixanhDBContext>()
     .AddDefaultTokenProviders();
 
-#region AddPooledDbContextFactory giúp giảm overhead tạo context (rất hợp cho Blazor Server). Connect to SQL Server
+#region AddPooledDbContextFactory giúp giảm overhead tạo context cho Blazor Server. Connect to SQL Server
 // AddDbContext vẫn giữ cho Identity
 builder.Services.AddDbContext<dixanhDBContext>(opt =>
 {

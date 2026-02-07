@@ -75,6 +75,7 @@ public class VehicleBase : ComponentBase
 
         _loading = false;
     }
+
     protected void ResetFilters()
     {
         _filtercurrentVehicleCode = null;
