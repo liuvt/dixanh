@@ -368,7 +368,19 @@ public sealed class VehicleService : IVehicleService
     }
 
     // Đổi mã xe
-    // Luồng nghiệp vụ:
+    // Luồng nghiệp vụ: 
+    // - Kiểm tra nếu mã xe+area mới trùng với active hiện tại thì idempotent (không lỗi, không làm gì)
+    // - Đóng active hiện tại (nếu có) bằng cách set ValidTo = newValidFrom - 1 tick
+    // - Thêm record mới với ValidFrom = newValidFrom, ValidTo = null
+    // - Cập nhật CurrentVehicleCode trên Vehicle nếu newValidFrom <= now
+    // - Tất cả trong transaction
+    // - Nếu newValidFrom <= active.ValidFrom thì lỗi
+    // - Nếu newValidFrom trong tương lai thì vẫn cho phép (chỉ không cập nhật CurrentVehicleCode trên Vehicle)
+    // - actor: người thực hiện thao tác (ghi vào ChangedBy)
+    // - dto.ChangeReason: lý do thay đổi (ghi vào ChangeReason)
+    // - Trả về void, ném exception nếu lỗi
+    // - Lưu ý: bạn có thể mở rộng thêm kiểm tra mã xe+area không được trùng với các record lịch sử (ValidTo != null) nếu cần
+
     public async Task ChangeVehicleCodeAsync(VehicleCodeChangeDto dto, string actor)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -392,6 +404,7 @@ public sealed class VehicleService : IVehicleService
         try
         {
             var vehicle = await db.Vehicles.FirstOrDefaultAsync(x => x.VehicleId == vehicleId);
+
             if (vehicle is null) throw new KeyNotFoundException($"Không tìm thấy VehicleId={vehicleId}");
 
             // Active record hiện tại

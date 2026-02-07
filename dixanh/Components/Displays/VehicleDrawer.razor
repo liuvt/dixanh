@@ -818,10 +818,10 @@
 
             // Convert VN local -> UTC (hàm ToUtcFromVnLocal bạn đã có)
             var validFromUtc = ToUtcFromVnLocal(dtLocal.Value);
-
+            Console.WriteLine($"_model.VehicleId = :{_model.VehicleId}");
             var dto = new VehicleCodeChangeDto
             {
-                VehicleId = _model.VehicleId,
+                VehicleId = _model.VehicleId, 
                 OperatingArea = _codeOperatingArea.Trim(),
                 VehicleCode = _codeVehicleCode.Trim(),
                 ValidFrom = validFromUtc,

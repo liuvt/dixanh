@@ -207,6 +207,8 @@ var app = builder.Build();
 
 // apply migration trước
 /*
+*/
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<dixanhDBContext>();
@@ -214,7 +216,6 @@ using (var scope = app.Services.CreateScope())
 }
 await SeedVehicles.SeedVehiclesAsync(app.Services);
 await SeedIdentitys.SeedIdentityAsync(app.Services);
-*/
 
 // Đọc X-Forwarded-Proto, X-Forwarded-Host từ Nginx
 /* var baseUrl = $"{Request.Scheme}://{Request.Host}";
